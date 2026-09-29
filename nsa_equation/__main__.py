@@ -3,6 +3,7 @@ import os
 import sys
 from . import __version__
 from . import dns
+from . import smbv3_scan
 
 
 def main():
@@ -34,6 +35,7 @@ def main():
 
     subparsers = parser.add_subparsers()
     dns.reg_subparser(subparsers)
+    smbv3_scan.reg_subparser(subparsers)
 
     args = parser.parse_args()
     args.func(args)
