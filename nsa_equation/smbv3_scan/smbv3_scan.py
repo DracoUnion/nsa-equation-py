@@ -22,6 +22,11 @@ This module reproduces that behaviour in portable, dependency-free Python:
   5. flags hosts that negotiate 0x0311 (SMB 3.1.1) as potentially affected.
 
 No exploit is performed — this is detection/scanning only.
+
+Observed in the original (via x32dbg memory dump of the packed module): the
+native scanner also links WTSAPI32 (`WTSSendMessageW`) — it can send a
+terminal-services popup message to sessions, a post-scan/messaging behaviour
+kept out of this detection-only rewrite.
 """
 
 import ipaddress
