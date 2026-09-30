@@ -30,3 +30,23 @@ nsa-equation-py smbv3-scan 10.0.0.1 10.0.0.2 -p 445 -t 3 -n 64
 > in-memory dump of the packed module (via x32dbg) was saved alongside the
 > scanner as `smb_poc_unpacked.pyd`; it confirms the scanner also links
 > WTSAPI32 (`WTSSendMessageW`) for terminal-session messaging.
+
+### get-arch — 主机操作系统架构 (32/64 位) 探测
+
+Python rewrite of `getArch.py`, recovered from the PyInstaller bundle
+`getArch.exe` (entry point `getArch.pyc`, Python 2.7) via IDA Pro + archive
+recovery.  It probes the RPC Endpoint Mapper on TCP 135 and binds the
+portmapper UUID (`MSRPC_UUID_PORTMAP`, `E1AF8308-...` v3.0) using the
+**NDR64 transfer syntax** (`71710533-BEBA-4937-8319-B5DBEF9CCC36` v1.0):
+
+- 64-bit Windows accepts NDR64 → `BIND_ACK` context accepted → **64-bit**
+- 32-bit Windows lacks NDR64 → `BIND_ACK` context rejected with
+  `proposed_transfer_syntaxes_not_supported` → **32-bit**
+
+Dependency-free (raw DCERPC BIND packet built by hand — the 72-byte request
+matches impacket's output byte-for-byte).  Read-only architectural probe.
+
+```bash
+nsa-equation-py get-arch -target 192.168.1.5              # single host
+nsa-equation-py get-arch -targets hosts.txt -timeout 2    # one host per line
+```
