@@ -7,6 +7,7 @@ from . import smbv3_scan
 from . import smbv3_exp
 from . import getarch
 from . import netapi32_exp
+from . import reternal_blue
 
 
 def main():
@@ -42,6 +43,7 @@ def main():
     smbv3_exp.reg_subparser(subparsers)
     getarch.reg_subparser(subparsers)
     netapi32_exp.reg_subparser(subparsers)
+    reternal_blue.reg_subparser(subparsers)
 
     args = parser.parse_args()
     args.func(args)

