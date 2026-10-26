@@ -9,6 +9,14 @@ from . import getarch
 from . import netapi32_exp
 from . import reternal_blue
 from . import rpc_exp
+# ---- Eclipsedwing-ms08 kit ports ----
+from . import eclipsedwing
+from . import eclipsedwingtouch
+from . import doublepulsar
+from . import pcdlllauncher
+from . import rpcproxy
+from . import rpctouch
+from . import danecfg
 
 
 def main():
@@ -46,6 +54,14 @@ def main():
     netapi32_exp.reg_subparser(subparsers)
     reternal_blue.reg_subparser(subparsers)
     rpc_exp.reg_subparser(subparsers)
+    # ---- Eclipsedwing-ms08 kit ports ----
+    eclipsedwing.reg_subparser(subparsers)
+    eclipsedwingtouch.reg_subparser(subparsers)
+    doublepulsar.reg_subparser(subparsers)
+    pcdlllauncher.reg_subparser(subparsers)
+    rpcproxy.reg_subparser(subparsers)
+    rpctouch.reg_subparser(subparsers)
+    danecfg.reg_subparser(subparsers)
 
     args = parser.parse_args()
     args.func(args)
