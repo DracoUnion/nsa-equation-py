@@ -19,6 +19,7 @@ from . import rpctouch
 from . import danecfg
 from . import eternal_champion
 from . import eternal_romance
+from . import exploding_can
 # ---- 12008smbexp kit port ----
 from . import smbexp
 # ---- Legacy tools ports ----
@@ -46,6 +47,7 @@ from . import setourip
 # danecfg           Eclipsedwing-ms08-2000-xp-03-08/danecfg.exe
 # eternal-champion  EQGRP_Lost_in_Translation-master/windows/specials/Eternalchampion-2.0.0.exe
 # eternal-romance   EQGRP_Lost_in_Translation-master/windows/exploits/Eternalromance-1.3.0.exe
+# exploding-can     EQGRP_Lost_in_Translation-master/windows/exploits/Explodingcan-2.0.2.exe
 # smbexp            12008smbexp/smbexp.exe
 # setourip          EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Resources/Tools/SetOurIp.exe
 #
@@ -99,6 +101,7 @@ def main():
     danecfg.reg_subparser(subparsers)
     eternal_champion.reg_subparser(subparsers)
     eternal_romance.reg_subparser(subparsers)
+    exploding_can.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)
     # ---- Legacy tools ports ----
