@@ -134,6 +134,7 @@ from . import setourip
 # easy-pi                 EQGRP_Lost_in_Translation-master/windows/exploits/Easypi-3.1.0.exe
 # eternal-synergy         EQGRP_Lost_in_Translation-master/windows/exploits/Eternalsynergy-1.0.1.exe
 # mofconfig               EQGRP_Lost_in_Translation-master/windows/implants/Mofconfig-1.0.0.exe
+# pcdlllauncher           EQGRP_Lost_in_Translation-master/windows/payloads/Pcdlllauncher-2.3.1.exe
 # smbexp            12008smbexp/smbexp.exe
 # setourip          EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Resources/Tools/SetOurIp.exe
 #
@@ -229,6 +230,7 @@ def main():
     eternal_synergy.reg_subparser(subparsers)
     eternal_synergy_14.reg_subparser(subparsers)
     mofconfig.reg_subparser(subparsers)
+    pcdlllauncher.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)
     # ---- Legacy tools ports ----
