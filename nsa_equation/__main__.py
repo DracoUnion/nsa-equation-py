@@ -101,6 +101,7 @@ from . import vlad
 from . import epwrapper
 from . import clocksvc
 from . import greatdoccfg
+from . import gkdecoder
 from . import eskimo_roll
 from . import eskimo_roll
 # ---- 12008smbexp kit port ----
@@ -323,6 +324,7 @@ def main():
     epwrapper.reg_subparser(subparsers)
     clocksvc.reg_subparser(subparsers)
     greatdoccfg.reg_subparser(subparsers)
+    gkdecoder.reg_subparser(subparsers)
     pcdlllauncher.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)

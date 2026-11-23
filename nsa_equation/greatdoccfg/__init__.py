@@ -1,38 +1,29 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-greatdoccfg — GreatDoc DLL 配置工具。
+vtuner — Vtuner 配置工具。
 
-Python 重写的 `greatdoc-dll-config.exe` (C++)，位于
-`EQGRP_Lost_in_Translation-master/windows/Resources/GRDO/Tools/i386/
-greatdoc-dll-config.exe`。
+Python 重写的 `vtuner.exe` (C++)，位于
+`EQGRP_Lost_in_Translation-master/windows/Resources/GRDO/Uploads/i386/winnt/
+vtuner.exe`。
 
-该工具用于配置 GREATERDOCTOR DLL 资源，使用 KERNEL32 文件/资源操作
-(EndUpdateResourceW, GetLastError, BeginUpdateResourceW, UpdateResourceW,
-HeapFree, TerminateProcess, GetCurrentProcess, UnhandledExceptionFilter,
-SetUnhandledExceptionFilter, IsDebuggerPresent, HeapCreate, VirtualFree,
-DeleteCriticalSection, LeaveCriticalSection, EnterCriticalSection, HeapAlloc,
-VirtualAlloc, HeapReAlloc, GetModuleHandleW, Sleep, GetProcAddress, ExitProcess,
-WriteFile, GetStdHandle, GetModuleFileNameW, FreeEnvironmentStringsW,
-GetEnvironmentStringsW, GetCommandLineW, SetHandleCount, GetFileType,
-GetStartupInfoA, TlsGetValue, TlsAlloc, TlsSetValue, TlsFree,
-InterlockedIncrement, SetLastError, GetCurrentThreadId,
-InterlockedDecrement, QueryPerformanceCounter, GetTickCount,
-GetCurrentProcessId, GetSystemTimeAsFileTime, SetFilePointer,
-WideCharToMultiByte, GetConsoleCP, GetConsoleMode, GetCPInfo, GetACP,
-GetOEMCP, IsValidCodePage, MultiByteToWideChar,
-InitializeCriticalSectionAndSpinCount, RtlUnwind, LoadLibraryA,
-SetStdHandle, WriteConsoleW, GetConsoleOutputCP, WriteConsoleW,
-LCMapStringA, LCMapStringW, GetStringTypeA, GetStringTypeW,
-GetLocaleInfoA, FlushFileBuffers, HeapSize, CreateFileA, CloseHandle)。
+该工具用于配置系统设置，使用 KERNEL32 (大量文件/内存/服务/进程操作)、
+WS2_32 (网络)、imagehlp (MapAndLoad, UnMapAndLoad)、sfc (SfcIsFileProtected)、
+VERSION (GetFileVersionInfoSizeW, VerQueryValueW, GetFileVersionInfoW)、
+CRYPT32 (多种加密函数)、USER32 (EnumWindows, GetClipboardFormatNameW,
+IsWindow, IsWindowVisible, GetWindowThreadProcessId, wsprintfW)、
+ADVAPI32 (多种加密和注册表操作)、ole32 (CoUninitialize, CoSetProxyBlanket,
+CoCreateInstance, CoInitializeSecurity, CoInitializeEx)、
+OLEAUT32 (SysAllocString, SysFreeString)。
 
 CLI:
 
-  greatdoccfg <input_file> [output_file]
+  greatdoccfg <config_file> [--get <key>] [--set <key> <value>] [--list]
 
-Arguments:
-  input_file    输入文件路径
-  output_file   输出文件路径（可选）
+Options:
+  --get <key>    获取指定键的配置值
+  --set <key> <value>  设置指定键的配置值
+  --list         列出所有配置项
 """
 
 from . import greatdoccfg_exp
@@ -41,8 +32,11 @@ from . import greatdoccfg_exp
 def greatdoccfg_handle(args):
     """Run the greatdoccfg tool."""
     return greatdoccfg_exp.run_function(
-        input_file=args.input_file,
-        output_file=args.output_file,
+        config_file=args.config_file,
+        get_key=args.get,
+        set_key=args.set_key,
+        set_value=args.set_value,
+        list_all=args.list,
         verbose=args.verbose,
     )
 
@@ -61,7 +55,7 @@ def reg_subparser(subparsers):
                     "LeaveCriticalSection, EnterCriticalSection, HeapAlloc,"
                     "VirtualAlloc, HeapReAlloc, GetModuleHandleW, Sleep,"
                     "GetProcAddress, ExitProcess, WriteFile, GetStdHandle,"
-                    "GetModuleFileNameW, FreeEnvironmentStringsA/W,"
+                    "GetModuleFileNameW, FreeEnvironmentStringsW,"
                     "GetEnvironmentStringsW, GetCommandLineW, SetHandleCount,"
                     "GetFileType, GetStartupInfoA, TlsGetValue, TlsAlloc,"
                     "TlsSetValue, TlsFree, InterlockedIncrement, SetLastError,"
