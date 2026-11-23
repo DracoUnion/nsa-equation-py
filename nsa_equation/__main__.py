@@ -71,6 +71,7 @@ from . import eske
 from . import ms06040rpc_dumped
 from . import emerald_thread_touch
 from . import oddjob_config
+from . import oj_deleter
 from . import eagerlever
 from . import scanner
 from . import expa
@@ -267,6 +268,7 @@ def main():
     ms06040rpc_dumped.reg_subparser(subparsers)
     emerald_thread_touch.reg_subparser(subparsers)
     oddjob_config.reg_subparser(subparsers)
+    oj_deleter.reg_subparser(subparsers)
     mofconfig.reg_subparser(subparsers)
     pcdlllauncher.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
