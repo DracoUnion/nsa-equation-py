@@ -3,12 +3,12 @@ import os
 import sys
 from . import __version__
 from . import dns
-from . import smbv3_scan
-from . import smbv3_exp
+from . import cve_2020_0796_scanner
+from . import cve_2020_0796_exp
 from . import getarch
-from . import netapi32_exp
-from . import reternal_blue
-from . import rpc_exp
+from . import ms06040rpc
+from . import eternalblue
+from . import ms06040rpc_unpacked_v2
 # ---- Eclipsedwing-ms08 kit ports ----
 from . import eclipsedwing
 from . import eclipsedwingtouch
@@ -21,6 +21,7 @@ from . import eternal_champion
 from . import eternal_romance
 from . import exploding_can
 from . import esteem_audit
+from . import erratic_gopher
 # ---- 12008smbexp kit port ----
 from . import smbexp
 # ---- Legacy tools ports ----
@@ -33,12 +34,12 @@ from . import setourip
 # Subcommand        Original .exe (relative to v0.68 root)
 # ----------------- ----------------------------------------------------------------
 # dns               1MS07-029-DNS/dns.exe
-# smbv3-scan        1Tools/CVE-2020-0796-Scanner.exe
-# smbv3-exp         1Tools/CVE-2020-0796-EXP.exe
-# get-arch          1Tools/getArch.exe
-# netapi32-exp      1ms06040rpc_Modified/ms06040rpc.exe
-# reternal-blue     EQGRP_Lost_in_Translation-master/windows/specials/Eternalblue-2.2.0.exe
-# rpc-exp           1ms06040rpc_Modified/ms06040rpc_unpacked_v2.exe
+# cve-2020-0796-scanner  1Tools/CVE-2020-0796-Scanner.exe
+# cve-2020-0796-exp      1Tools/CVE-2020-0796-EXP.exe
+# getarch          1Tools/getArch.exe
+# ms06040rpc      1ms06040rpc_Modified/ms06040rpc.exe
+# eternalblue     EQGRP_Lost_in_Translation-master/windows/specials/Eternalblue-2.2.0.exe
+# ms06040rpc-unpacked-v2   1ms06040rpc_Modified/ms06040rpc_unpacked_v2.exe
 # eclipsedwing      Eclipsedwing-ms08-2000-xp-03-08/Eclipsedwing-1.5.2.exe
 # eclipsedwingtouch Eclipsedwing-ms08-2000-xp-03-08/Eclipsedwingtouch-1.0.4.exe
 # doublepulsar      Eclipsedwing-ms08-2000-xp-03-08/Doublepulsar-1.3.1.exe
@@ -87,12 +88,12 @@ def main():
 
     subparsers = parser.add_subparsers()
     dns.reg_subparser(subparsers)
-    smbv3_scan.reg_subparser(subparsers)
-    smbv3_exp.reg_subparser(subparsers)
+    cve_2020_0796_scanner.reg_subparser(subparsers)
+    cve_2020_0796_exp.reg_subparser(subparsers)
     getarch.reg_subparser(subparsers)
-    netapi32_exp.reg_subparser(subparsers)
-    reternal_blue.reg_subparser(subparsers)
-    rpc_exp.reg_subparser(subparsers)
+    ms06040rpc.reg_subparser(subparsers)
+    eternalblue.reg_subparser(subparsers)
+    ms06040rpc_unpacked_v2.reg_subparser(subparsers)
     # ---- Eclipsedwing-ms08 kit ports ----
     eclipsedwing.reg_subparser(subparsers)
     eclipsedwingtouch.reg_subparser(subparsers)

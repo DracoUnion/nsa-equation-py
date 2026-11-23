@@ -1,4 +1,4 @@
-"""get-arch — host OS architecture (32- vs 64-bit) detector.
+"""getarch — host OS architecture (32- vs 64-bit) detector.
 
 Python rewrite of `getArch.py`, recovered from the PyInstaller bundle
 `getArch.exe` (entry point `getArch.pyc`, Python 2.7) via IDA Pro + archive
@@ -31,9 +31,9 @@ def get_arch_handle(args):
 
 
 def reg_subparser(subparsers):
-    """Register the `get-arch` subcommand on an argparse subparsers group."""
+    """Register the `getarch` subcommand on an argparse subparsers group."""
     p = subparsers.add_parser(
-        "get-arch",
+        "getarch",
         help="通过 RPC Endpoint Mapper 探测目标操作系统架构 (32/64 位)",
         description="连接到目标 TCP 135 (RPC Endpoint Mapper)，向 portmapper 提交一个使用 "
                     "NDR64 transfer syntax 的 DCERPC BIND：64 位 Windows 接受 NDR64，"
