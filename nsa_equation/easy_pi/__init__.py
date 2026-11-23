@@ -17,7 +17,6 @@ def easy_pi_handle(args):
         target=args.target,
         port=args.port,
         timeout=args.timeout,
-        connections=args.connections,
         verbose=args.verbose,
     )
 
@@ -29,8 +28,7 @@ def reg_subparser(subparsers):
         "easy-pi",
         help="EASYPI Lotus cc:Mail 远程利用",
         description="Python 重写的 NSA Easypi (EASYPI) Lotus cc:Mail "
-                    "远程利用工具 Easypi-3.1.0。针对 Lotus cc:Mail 服务器，"
-                    "执行并发连接利用。",
+                    "远程利用工具 Easypi-3.1.0。通过 TCP 连接执行远程利用。",
     )
     p.add_argument(
         "target", metavar="TARGET",
@@ -43,10 +41,6 @@ def reg_subparser(subparsers):
     p.add_argument(
         "--timeout", type=int, default=180,
         help="阻塞网络调用超时秒（-1 表示无超时，默认 180）",
-    )
-    p.add_argument(
-        "--connections", type=int, default=20,
-        help="并发连接数量（默认 20）",
     )
     p.add_argument(
         "-v", "--verbose", action="store_true",
