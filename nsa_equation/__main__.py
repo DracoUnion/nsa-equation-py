@@ -56,6 +56,7 @@ from . import englishmansdentist
 from . import eskimo_roll
 from . import emphasis_mine
 from . import ewok_frenzy
+from . import eafu
 # ---- 12008smbexp kit port ----
 from . import smbexp
 # ---- Legacy tools ports ----
@@ -119,6 +120,7 @@ from . import setourip
 # eskimo-roll             EQGRP_Lost_in_Translation-master/windows/exploits/Eskimoroll-1.1.1.exe
 # emphasis-mine           EQGRP_Lost_in_Translation-master/windows/exploits/Emphasismine-3.4.0.exe
 # ewok-frenzy             EQGRP_Lost_in_Translation-master/windows/exploits/Ewokfrenzy-2.0.0.exe
+# eafu                    EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Exploits/EAFU 2.2.0/EAFU.exe
 # smbexp            12008smbexp/smbexp.exe
 # setourip          EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Resources/Tools/SetOurIp.exe
 #
@@ -208,6 +210,7 @@ def main():
     eskimo_roll.reg_subparser(subparsers)
     emphasis_mine.reg_subparser(subparsers)
     ewok_frenzy.reg_subparser(subparsers)
+    eafu.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)
     # ---- Legacy tools ports ----
