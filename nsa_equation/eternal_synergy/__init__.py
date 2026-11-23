@@ -1,4 +1,4 @@
-"""eternal-synergy — MS17-010 (ETERNALSYNERGY / ETESYNERGY) SMBv1 远程利用。
+"""eternal-synergy — MS17-010 (ETERNALSYNERGY / ETSYNERGY) SMBv1 远程利用。
 
 Python 重写的 NSA Eternalsynergy 利用工具 `Eternalsynergy-1.0.1.exe`
 (C++ / DAVE framework)，通过 IDA Pro / x32dbg 逆向恢复。
@@ -69,7 +69,7 @@ def reg_subparser(subparsers):
     )
     p.add_argument(
         "--many-core-target", action="store_true",
-        help="ManyCoreTarget：目标是否具有多核（8核或以上）",
+        help="ManyCoreTarget：目标是否具有多核（8核或更多，物理或虚拟）",
     )
     p.add_argument(
         "--pipe", metavar="PIPE",
@@ -83,13 +83,13 @@ def reg_subparser(subparsers):
     )
     p.add_argument(
         "--shellcode-file", metavar="FILE",
-        help="DOPU shellcode 文件（x64 版本专用）",
+        help="DOPU shellcode 文件（x64 专用）",
     )
     p.add_argument(
         "--credentials",
         choices=["Anonymous", "Guest", "Blank", "Password", "NTLM"],
         default="Anonymous",
-        help="凭证类型",
+        help="凭证类型（默认 Anonymous）",
     )
     p.add_argument(
         "--username", metavar="HEX",

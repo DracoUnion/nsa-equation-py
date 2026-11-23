@@ -107,8 +107,9 @@ def run_function(
     """执行 ETERNALSYNERGY 利用序列。
 
     当前阶段：完成参数解析、SMB 连接与协商。
-    具体 exploit 缓冲区（DOPU shellcode、事务泄漏、内存劫持等）
-    的二进制结构尚需通过 capstone/x32dbg 进一步逆向后填充。
+    具体 exploit 缓冲区（DOPU shellcode、非分页池占位、架构识别、
+    exploit 缓冲发送等）的二进制结构尚需通过 IDA/x32dbg 进一步逆向后
+    填充。
     """
     if verbose:
         print(f"[*] Target: {target}:{port}")
@@ -124,6 +125,10 @@ def run_function(
             print(f"[*] Shellcode file: {shellcode_file}")
         if pipe:
             print(f"[*] Pipe: {pipe}")
+        if username:
+            print(f"[*] Username: {username}")
+        if credential:
+            print(f"[*] Credential: {credential}")
 
     # 解析常量
     exploit_method_value = EXPLOIT_METHOD_VALUES[exploit_method]
@@ -139,7 +144,6 @@ def run_function(
     if verbose:
         print(f"[*] Exploit method value: {exploit_method_value}")
         print(f"[*] Credentials value: {credentials_value}")
-        print(f"[*] Target OS: major={target_os_info['OsMajor']}, minor={target_os_info['OsMinor']}, sp={target_os_info['OsServicePack']}")
         print(f"[*] Username: {len(username_bytes)} bytes")
         print(f"[*] Password: {len(password_bytes)} bytes")
         print(f"[*] NTLM hash: {len(ntlm_hash_bytes)} bytes")
@@ -169,10 +173,10 @@ def run_function(
 
     # TODO: 以下 exploit 缓冲区构建需通过 IDA/x32dbg 逆向后填充：
     #   - 事务泄漏（Transaction leak）
-    #   - 内存劫持
+    #   - 内存劫持（DoublePulsar 类型 payload）
+    #   - 架构识别（x86/x64）
     #   - DOPU shellcode 注入（x64 专用）
-    #   - 架构识别（x64）
-    #   - 后门投递
+    #   - 验证目标是否易受攻击
 
     return 0
 
