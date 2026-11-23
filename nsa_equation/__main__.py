@@ -59,6 +59,7 @@ from . import ewok_frenzy
 from . import eafu
 from . import easy_pi
 from . import eternal_synergy
+from . import mofconfig
 # ---- 12008smbexp kit port ----
 from . import smbexp
 # ---- Legacy tools ports ----
@@ -125,6 +126,8 @@ from . import setourip
 # ewok-frenzy             EQGRP_Lost_in_Translation-master/windows/exploits/Ewokfrenzy-2.0.0.exe
 # eafu                    EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Exploits/EAFU 2.2.0/EAFU.exe
 # easy-pi                 EQGRP_Lost_in_Translation-master/windows/exploits/Easypi-3.1.0.exe
+# eternal-synergy         EQGRP_Lost_in_Translation-master/windows/exploits/Eternalsynergy-1.0.1.exe
+# mofconfig               EQGRP_Lost_in_Translation-master/windows/implants/Mofconfig-1.0.0.exe
 # smbexp            12008smbexp/smbexp.exe
 # setourip          EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Resources/Tools/SetOurIp.exe
 #
@@ -217,6 +220,7 @@ def main():
     eafu.reg_subparser(subparsers)
     easy_pi.reg_subparser(subparsers)
     eternal_synergy.reg_subparser(subparsers)
+    mofconfig.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)
     # ---- Legacy tools ports ----
