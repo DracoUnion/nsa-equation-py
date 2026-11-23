@@ -57,7 +57,6 @@ from . import eskimo_roll
 from . import emphasis_mine
 from . import ewok_frenzy
 from . import eafu
-from . import easy_pi
 from . import eternal_synergy
 from . import mofconfig
 # ---- 12008smbexp kit port ----
