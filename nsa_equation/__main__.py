@@ -79,6 +79,7 @@ from . import scanner
 from . import expa
 from . import simrpc
 from . import svctouch
+from . import ridearea2
 from . import mofconfig
 from . import eskimo_roll
 from . import eskimo_roll
@@ -273,6 +274,7 @@ def main():
     w9xpopen.reg_subparser(subparsers)
     svctouch.reg_subparser(subparsers)
     sc.reg_subparser(subparsers)
+    ridearea2.reg_subparser(subparsers)
     ms06040rpc_dumped.reg_subparser(subparsers)
     emerald_thread_touch.reg_subparser(subparsers)
     oddjob_config.reg_subparser(subparsers)
