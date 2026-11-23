@@ -57,9 +57,11 @@ from . import eskimo_roll
 from . import emphasis_mine
 from . import ewok_frenzy
 from . import eafu
+from . import eafu
 from . import darkpulsar
 from . import eternal_synergy
 from . import mofconfig
+from . import eskimo_roll
 from . import eskimo_roll
 # ---- 12008smbexp kit port ----
 from . import smbexp

