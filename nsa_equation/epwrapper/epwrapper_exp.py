@@ -27,12 +27,13 @@ Recovered interface from the binary's imports:
               __setusermatherr, _adjust_fdiv, __p__commode, __p__fmode,
               __set_app_type, ?terminate@@YAXXZ, __dllonexit, _onexit,
               _controlfp, sprintf, wprintf, vwprintf, wcslen, _wfullpath,
-              wcstoul, malloc, strlen, free, wcscpy, strcpy, _vsnwprintf,
-              malloc, strlen, free, _wtoi, memset, wcsncat, _snwprintf,
-              wcslen, wcschr, vwprintf, vfwprintf, fclose, _beginthreadex,
-              _iob, fflush, wscanf, swscanf, _except_handler3,
-              ??_V@YAXPAX@Z, memmove, ??2@YAPAXI@Z, _CxxThrowException,
-              ??0exception@@QAE@ABV0@@Z, ??3@YAXPAX@Z, __CxxFrameHandler,
+              wcstoul, malloc, strlen, free, wcscpy, strcpy,
+              _vsnwprintf, malloc, strlen, free, _wtoi, memset, wcsncat,
+              _snwprintf, wcslen, wcschr, vwprintf, vfwprintf, fclose,
+              _beginthreadex, _iob, fflush, wscanf, swscanf,
+              _except_handler3, ??_V@YAXPAX@Z, memmove, ??2@YAPAXI@Z,
+              _CxxThrowException, ??0exception@@QAE@ABV0@@Z,
+              ??3@YAXPAX@Z, __CxxFrameHandler,
               ??0exception@@QAE@XZ, ??1exception@@UAE@XZ, _wcsicmp,
               _vsnprintf
 
@@ -62,14 +63,6 @@ import ctypes
 import ctypes.wintypes as wtypes
 import os
 import sys
-
-
-# ---------------------------------------------------------------------------
-# Constants.
-# ---------------------------------------------------------------------------
-
-def _log(fmt, *args):
-    sys.stderr.write((fmt % args).rstrip("\n") + "\n")
 
 
 # ---------------------------------------------------------------------------
