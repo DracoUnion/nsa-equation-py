@@ -86,6 +86,7 @@ from . import genkey
 from . import pccfg
 from . import verpatch
 from . import setcallback
+from . import setouraddr
 from . import eskimo_roll
 from . import eskimo_roll
 # ---- 12008smbexp kit port ----
@@ -290,6 +291,7 @@ def main():
     pccfg.reg_subparser(subparsers)
     verpatch.reg_subparser(subparsers)
     setcallback.reg_subparser(subparsers)
+    setouraddr.reg_subparser(subparsers)
     pcdlllauncher.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)
