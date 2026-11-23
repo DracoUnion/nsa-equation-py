@@ -60,6 +60,7 @@ from . import eafu
 from . import eafu
 from . import darkpulsar
 from . import eternal_synergy
+from . import eternal_synergy_14
 from . import mofconfig
 from . import eskimo_roll
 from . import eskimo_roll
@@ -90,6 +91,7 @@ from . import setourip
 # danecfg           Eclipsedwing-ms08-2000-xp-03-08/danecfg.exe
 # eternal-champion  EQGRP_Lost_in_Translation-master/windows/specials/Eternalchampion-2.0.0.exe
 # eternal-romance   EQGRP_Lost_in_Translation-master/windows/exploits/Eternalromance-1.3.0.exe
+# eternal-romance-1.4 EQGRP_Lost_in_Translation-master/windows/exploits/Eternalromance-1.4.0.exe
 # exploding-can     EQGRP_Lost_in_Translation-master/windows/exploits/Explodingcan-2.0.2.exe
 # eternal-synergy   EQGRP_Lost_in_Translation-master/windows/exploits/Eternalsynergy-1.0.1.exe
 # esteem-audit      EQGRP_Lost_in_Translation-master/windows/exploits/Esteemaudit-2.1.0.exe
@@ -225,6 +227,7 @@ def main():
     darkpulsar.reg_subparser(subparsers)
     easy_pi.reg_subparser(subparsers)
     eternal_synergy.reg_subparser(subparsers)
+    eternal_synergy_14.reg_subparser(subparsers)
     mofconfig.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)
