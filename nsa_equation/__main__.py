@@ -58,6 +58,7 @@ from . import emphasis_mine
 from . import ewok_frenzy
 from . import eafu
 from . import easy_pi
+from . import eternal_synergy
 # ---- 12008smbexp kit port ----
 from . import smbexp
 # ---- Legacy tools ports ----
@@ -86,6 +87,7 @@ from . import setourip
 # eternal-champion  EQGRP_Lost_in_Translation-master/windows/specials/Eternalchampion-2.0.0.exe
 # eternal-romance   EQGRP_Lost_in_Translation-master/windows/exploits/Eternalromance-1.3.0.exe
 # exploding-can     EQGRP_Lost_in_Translation-master/windows/exploits/Explodingcan-2.0.2.exe
+# eternal-synergy   EQGRP_Lost_in_Translation-master/windows/exploits/Eternalsynergy-1.0.1.exe
 # esteem-audit      EQGRP_Lost_in_Translation-master/windows/exploits/Esteemaudit-2.1.0.exe
 # educated-scholar  EQGRP_Lost_in_Translation-master/windows/exploits/Educatedscholar-1.0.0.exe
 # emerald-thread    EQGRP_Lost_in_Translation-master/windows/exploits/Emeraldthread-3.0.0.exe
@@ -214,6 +216,7 @@ def main():
     ewok_frenzy.reg_subparser(subparsers)
     eafu.reg_subparser(subparsers)
     easy_pi.reg_subparser(subparsers)
+    eternal_synergy.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)
     # ---- Legacy tools ports ----
