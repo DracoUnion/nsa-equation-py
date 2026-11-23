@@ -50,6 +50,7 @@ from . import reg_delete
 from . import reg_enum
 from . import reg_read
 from . import reg_write
+from . import easybee
 # ---- 12008smbexp kit port ----
 from . import smbexp
 # ---- Legacy tools ports ----
@@ -107,6 +108,7 @@ from . import setourip
 # reg-enum                EQGRP_Lost_in_Translation-master/windows/payloads/Regenum-1.1.1.exe
 # reg-read                EQGRP_Lost_in_Translation-master/windows/payloads/Regread-1.1.1.exe
 # reg-write               EQGRP_Lost_in_Translation-master/windows/payloads/Regwrite-1.1.1.exe
+# easybee                 EQGRP_Lost_in_Translation-master/windows/exploits/Easybee-1.0.1.exe
 # smbexp            12008smbexp/smbexp.exe
 # setourip          EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Resources/Tools/SetOurIp.exe
 #
@@ -190,6 +192,7 @@ def main():
     reg_enum.reg_subparser(subparsers)
     reg_read.reg_subparser(subparsers)
     reg_write.reg_subparser(subparsers)
+    easybee.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)
     # ---- Legacy tools ports ----
