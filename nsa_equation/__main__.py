@@ -33,6 +33,7 @@ from . import erratic_gopher_touch
 from . import esteem_audit_touch
 from . import exploding_can_touch
 from . import iis_touch
+from . import namedpipe_touch
 # ---- 12008smbexp kit port ----
 from . import smbexp
 # ---- Legacy tools ports ----
@@ -73,6 +74,7 @@ from . import setourip
 # esteem-audit-touch      EQGRP_Lost_in_Translation-master/windows/touches/Esteemaudittouch-2.1.0.exe
 # exploding-can-touch     EQGRP_Lost_in_Translation-master/windows/touches/Explodingcantouch-1.2.1.exe
 # iis-touch               EQGRP_Lost_in_Translation-master/windows/touches/Iistouch-1.2.2.exe
+# namedpipe-touch         EQGRP_Lost_in_Translation-master/windows/touches/Namedpipetouch-2.0.0.exe
 # smbexp            12008smbexp/smbexp.exe
 # setourip          EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Resources/Tools/SetOurIp.exe
 #
@@ -139,6 +141,7 @@ def main():
     esteem_audit_touch.reg_subparser(subparsers)
     exploding_can_touch.reg_subparser(subparsers)
     iis_touch.reg_subparser(subparsers)
+    namedpipe_touch.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)
     # ---- Legacy tools ports ----
