@@ -40,6 +40,7 @@ from . import smb_delete
 from . import smb_list
 from . import smb_read
 from . import smb_write
+from . import printjob_delete
 # ---- 12008smbexp kit port ----
 from . import smbexp
 # ---- Legacy tools ports ----
@@ -87,6 +88,7 @@ from . import setourip
 # smb-list                EQGRP_Lost_in_Translation-master/windows/payloads/Smblist-1.1.1.exe
 # smb-read                EQGRP_Lost_in_Translation-master/windows/payloads/Smbread-1.1.1.exe
 # smb-write               EQGRP_Lost_in_Translation-master/windows/payloads/Smbwrite-1.1.1.exe
+# printjob-delete         EQGRP_Lost_in_Translation-master/windows/touches/Printjobdelete-1.0.0.exe
 # smbexp            12008smbexp/smbexp.exe
 # setourip          EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Resources/Tools/SetOurIp.exe
 #
@@ -160,6 +162,7 @@ def main():
     smb_list.reg_subparser(subparsers)
     smb_read.reg_subparser(subparsers)
     smb_write.reg_subparser(subparsers)
+    printjob_delete.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)
     # ---- Legacy tools ports ----
