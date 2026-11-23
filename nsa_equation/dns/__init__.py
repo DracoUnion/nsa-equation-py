@@ -22,7 +22,7 @@ def dns_handle(args):
 def reg_subparser(subparsers):
     """Register the `dns` subcommand on an argparse parser / subparsers group."""
     dns_parser = subparsers.add_parser(
-        "dns", help="DNS payload 构建工具（dns.exe 的 Python 重写）",
+        "dns", help="DNS payload 构建工具（1MS07-029-DNS/dns.exe 的 Python 重写）",
         description="DNS 负载构建器。选项透传给 dns_tool，例如 -y <payload> -R <ip> -p <port> 等。"
     )
     # dns_tool keeps its own option parser; forward whatever follows `dns`
