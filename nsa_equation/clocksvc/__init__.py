@@ -6,7 +6,8 @@ clocksvc — ClockSvc 监听/代理工具。
 Python 重写的 `clocksvc.exe` (C++)，位于
 `EQGRP_Lost_in_Translation-master/windows/Resources/Ep/clocksvc.exe`。
 
-该工具用于监听和代理网络连接，支持 mailslot、socket 监听、服务管理等。
+该工具用于监听和代理网络连接，支持 mailslot、socket 监听、服务管理、
+注册表操作等。
 通过静态 PE 分析恢复，其导入的关键函数包括：
   - KERNEL32: 大量文件/内存/服务/进程/线程操作
   - USER32: CreateWindowEx, DestroyWindow, GetCursorPos, GetWindowLongA,
@@ -22,21 +23,21 @@ Python 重写的 `clocksvc.exe` (C++)，位于
 
 CLI:
 
-  clocksvc [options]
+  clocksvc [--listen <port>] [--mailslot <name>] [--service <name>]
+           [--registry <key>] [-v]
 
 Options:
   --listen <port>   监听端口
   --mailslot <name> 监听邮件槽名称
   --service <name>  服务名称
   --registry <key>  注册表键名
-  -v, --verbose     启用详细输出
 """
 
 from . import clocksvc_exp
 
 
 def clocksvc_handle(args):
-    """Run the clocksvc tool."""
+    """Run the ClockSvc tool."""
     return clocksvc_exp.run_function(
         listen_port=args.listen_port,
         mailslot=args.mailslot,
