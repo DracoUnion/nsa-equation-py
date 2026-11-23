@@ -90,6 +90,7 @@ from . import setcallbackports
 from . import setouraddr
 from . import setports
 from . import setresourcename
+from . import pc_lp
 from . import eskimo_roll
 from . import eskimo_roll
 # ---- 12008smbexp kit port ----
@@ -298,6 +299,7 @@ def main():
     setouraddr.reg_subparser(subparsers)
     setports.reg_subparser(subparsers)
     setresourcename.reg_subparser(subparsers)
+    pc_lp.reg_subparser(subparsers)
     pcdlllauncher.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)
