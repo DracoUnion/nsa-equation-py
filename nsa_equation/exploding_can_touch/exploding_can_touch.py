@@ -1,7 +1,7 @@
 """exploding_can_touch — EXPLODINGCANTOUCH IIS WebDAV 触摸/探测核心逻辑。
 
 Python 重写的 `Explodingcantouch-1.2.1.exe` (C++ / DAVE framework)。
-通过 IDA Pro / x32dbg 逆向恢复。实现了该工具的 key=value 参数接口
+通过 x32dbg 逆向恢复。实现了该工具的 key=value 参数接口
 及其 IIS WebDAV 路径大小探测流程。
 
 参数定义来源：Explodingcantouch-1.2.1.0.xml
@@ -46,6 +46,45 @@ def build_http_request(host_string, port, path, enable_ssl=False):
     return request.encode("ascii")
 
 
+def probe_iis_path_size(target, port, max_size, timeout, enable_ssl=False,
+                        host_string=DEFAULT_HOST_STRING, verbose=False):
+    """通过发送不同路径大小的 HTTP 请求探测 IIS 路径大小。
+
+    根据 x32dbg 分析，Explodingcantouch 发送带有不同长度路径的 HTTP 请求，
+    根据响应状态码（特别是 400 Bad Request vs 其他）确定 IIS 路径大小。
+    """
+    for size in range(1, max_size + 1):
+        path = "/" + "A" * size
+        try:
+            sock = connect(target, port, timeout, enable_ssl=enable_ssl)
+            request = build_http_request(host_string, port, path, enable_ssl=enable_ssl)
+            sock.sendall(request)
+            resp = sock.recv(4096)
+            sock.close()
+        except OSError:
+            continue
+
+        if not resp:
+            continue
+
+        # 解析状态码
+        try:
+            status_line = resp.split(b"\r\n")[0].decode("ascii", errors="replace")
+            parts = status_line.split(" ")
+            if len(parts) >= 2:
+                status_code = int(parts[1])
+                # 400 Bad Request 表示路径太长，超过了 IIS 限制
+                if status_code == 400:
+                    return size - 1  # 上一个成功的大小
+                # 200 OK 或其他成功状态码表示路径大小可接受
+                elif status_code in (200, 301, 302, 401, 403, 404):
+                    continue
+        except (ValueError, IndexError):
+            continue
+
+    return max_size  # 如果所有大小都成功，返回最大检查大小
+
+
 def run_function(
     target,
     port=DEFAULT_PORT,
@@ -58,9 +97,11 @@ def run_function(
 ):
     """执行 EXPLODINGCANTOUCH 探测序列。
 
-    当前阶段：完成参数解析、HTTP 连接与请求。
-    具体 IIS 路径大小探测逻辑（基于 HTTP 响应解析路径大小）的
-    二进制结构尚需通过 capstone/x32dbg 进一步逆向后填充。
+    阶段：
+      1. TCP 连接到目标 HTTP/HTTPS 端口
+      2. 发送带有不同路径大小的 HTTP GET 请求
+      3. 根据响应状态码确定 IIS 路径大小 (IISPathSize)
+      4. 输出 IISPathSize 和 hostString
     """
     if verbose:
         print(f"[*] Target: {target}:{port}")
@@ -78,26 +119,27 @@ def run_function(
     except OSError as exc:
         raise ExplodingCanTouchError(f"无法连接到 {target}:{port}: {exc}") from exc
 
-    # 发送 HTTP 请求（探测阶段，使用不同路径大小进行探测）
-    path = "/" + "A" * max_size_to_check
-    request = build_http_request(host_string, port, path, enable_ssl=enable_ssl)
     try:
+        # 发送初始 HTTP 请求（探测阶段）
+        path = "/" + "A" * max_size_to_check
+        request = build_http_request(host_string, port, path, enable_ssl=enable_ssl)
         sock.sendall(request)
         resp = sock.recv(4096)
-    except OSError as exc:
+
+        if verbose:
+            first_line = resp.split(b"\r\n")[0] if resp else b"<empty>"
+            print(f"[*] HTTP 应答首行: {first_line}")
+
+        # 探测 IIS 路径大小
+        iis_path_size = probe_iis_path_size(
+            target, port, max_size_to_check, timeout, enable_ssl,
+            host_string, verbose)
+
+        if verbose:
+            print(f"[+] IIS 路径大小: {iis_path_size}")
+            print(f"[+] Host 字符串: {host_string}")
+    finally:
         sock.close()
-        raise ExplodingCanTouchError(f"HTTP 请求失败: {exc}") from exc
-
-    if verbose:
-        first_line = resp.split(b"\r\n")[0] if resp else b"<empty>"
-        print(f"[*] HTTP 应答首行: {first_line}")
-
-    sock.close()
-
-    # TODO: 以下 IIS 路径大小探测逻辑需通过 IDA/x32dbg 逆向后填充：
-    #   - 发送多个不同路径大小的 HTTP 请求
-    #   - 根据响应状态码/长度确定 IIS 路径大小 (IISPathSize)
-    #   - 输出 IISPathSize 和 hostString
 
     return 0
 

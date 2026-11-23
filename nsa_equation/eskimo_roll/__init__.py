@@ -30,8 +30,7 @@ def eskimo_roll_handle(args):
 
 
 def reg_subparser(subparsers):
-    """Register the `eskimo-roll` subcommand on an argparse
-    subparsers group."""
+    """Register the `eskimo-roll` subcommand on an argparse subparsers group."""
     p = subparsers.add_parser(
         "eskimo-roll",
         help="ESKIMOROLL Kerberos 远程利用",

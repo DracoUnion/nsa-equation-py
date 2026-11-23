@@ -5,8 +5,10 @@ from . import __version__
 from . import dns
 from . import cve_2020_0796_scanner
 from . import cve_2020_0796_exp
+from . import cve_2020_0796_exp_unpacked
 from . import getarch
 from . import ms06040rpc
+from . import ms06040rpc_unpacked
 from . import eternalblue
 from . import ms06040rpc_unpacked_v2
 # ---- Eclipsedwing-ms08 kit ports ----
@@ -58,9 +60,20 @@ from . import emphasis_mine
 from . import ewok_frenzy
 from . import eafu
 from . import eafu
+from . import eafu_ssl
 from . import darkpulsar
 from . import eternal_synergy
 from . import eternal_synergy_14
+from . import etbl
+from . import etre
+from . import evfr
+from . import eske
+from . import ms06040rpc_dumped
+from . import emerald_thread_touch
+from . import oddjob_config
+from . import eagerlever
+from . import scanner
+from . import expa
 from . import mofconfig
 from . import eskimo_roll
 from . import eskimo_roll
@@ -78,8 +91,10 @@ from . import setourip
 # dns               1MS07-029-DNS/dns.exe
 # cve-2020-0796-scanner  1Tools/CVE-2020-0796-Scanner.exe
 # cve-2020-0796-exp      1Tools/CVE-2020-0796-EXP.exe
+# cve-2020-0796-exp-unpacked  1Tools/CVE-2020-0796-EXP_unpacked.exe
 # getarch          1Tools/getArch.exe
 # ms06040rpc      1ms06040rpc_Modified/ms06040rpc.exe
+# ms06040rpc-unpacked     1ms06040rpc_Modified/ms06040rpc_unpacked.exe
 # eternalblue     EQGRP_Lost_in_Translation-master/windows/specials/Eternalblue-2.2.0.exe
 # ms06040rpc-unpacked-v2   1ms06040rpc_Modified/ms06040rpc_unpacked_v2.exe
 # eclipsedwing      Eclipsedwing-ms08-2000-xp-03-08/Eclipsedwing-1.5.2.exe
@@ -95,6 +110,10 @@ from . import setourip
 # exploding-can     EQGRP_Lost_in_Translation-master/windows/exploits/Explodingcan-2.0.2.exe
 # eternal-synergy   EQGRP_Lost_in_Translation-master/windows/exploits/Eternalsynergy-1.0.1.exe
 # esteem-audit      EQGRP_Lost_in_Translation-master/windows/exploits/Esteemaudit-2.1.0.exe
+# etbl                EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Exploits/ETBL 1.1.1/ETBL.exe
+# etre                EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Exploits/ETRE 1.0.4/ETRE.exe
+# evfr                EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Exploits/EVFR 3.2.0.2/EVFR.exe
+# expa                EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Exploits/EXPA 1.0.0.2/EXPA.exe
 # educated-scholar  EQGRP_Lost_in_Translation-master/windows/exploits/Educatedscholar-1.0.0.exe
 # emerald-thread    EQGRP_Lost_in_Translation-master/windows/exploits/Emeraldthread-3.0.0.exe
 # ecwi              EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Exploits/ECWI/ecwi.exe
@@ -130,11 +149,17 @@ from . import setourip
 # emphasis-mine           EQGRP_Lost_in_Translation-master/windows/exploits/Emphasismine-3.4.0.exe
 # ewok-frenzy             EQGRP_Lost_in_Translation-master/windows/exploits/Ewokfrenzy-2.0.0.exe
 # eafu                    EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Exploits/EAFU 2.2.0/EAFU.exe
+# eafu_ssl                EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Exploits/EAFU 2.2.0/EAFU_SSL_exe/EAFU_SSL.exe
 # darkpulsar              EQGRP_Lost_in_Translation-master/windows/implants/Darkpulsar-1.1.0.exe
 # easy-pi                 EQGRP_Lost_in_Translation-master/windows/exploits/Easypi-3.1.0.exe
 # eternal-synergy         EQGRP_Lost_in_Translation-master/windows/exploits/Eternalsynergy-1.0.1.exe
+# eske                    EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Exploits/ESKE 1.6.2/ESKE.exe
+# expa                    EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Exploits/EXPA 1.0.0.2/EXPA.exe
 # mofconfig               EQGRP_Lost_in_Translation-master/windows/implants/Mofconfig-1.0.0.exe
 # pcdlllauncher           EQGRP_Lost_in_Translation-master/windows/payloads/Pcdlllauncher-2.3.1.exe
+# ms06040rpc-dumped       1ms06040rpc_Modified/ms06040rpc_dumped.exe
+# emerald_thread_touch    EQGRP_Lost_in_Translation-master/windows/touches/Emeraldthreadtouch-1.0.0.exe
+# oddjob_config           EQGRP_Lost_in_Translation-master/oddjob/Binaries/oddjob_builder/builder/oddjob_config_v3.exe
 # smbexp            12008smbexp/smbexp.exe
 # setourip          EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Resources/Tools/SetOurIp.exe
 #
@@ -174,8 +199,10 @@ def main():
     dns.reg_subparser(subparsers)
     cve_2020_0796_scanner.reg_subparser(subparsers)
     cve_2020_0796_exp.reg_subparser(subparsers)
+    cve_2020_0796_exp_unpacked.reg_subparser(subparsers)
     getarch.reg_subparser(subparsers)
     ms06040rpc.reg_subparser(subparsers)
+    ms06040rpc_unpacked.reg_subparser(subparsers)
     eternalblue.reg_subparser(subparsers)
     ms06040rpc_unpacked_v2.reg_subparser(subparsers)
     # ---- Eclipsedwing-ms08 kit ports ----
@@ -226,9 +253,20 @@ def main():
     ewok_frenzy.reg_subparser(subparsers)
     eafu.reg_subparser(subparsers)
     darkpulsar.reg_subparser(subparsers)
+    eafu_ssl.reg_subparser(subparsers)
     easy_pi.reg_subparser(subparsers)
     eternal_synergy.reg_subparser(subparsers)
     eternal_synergy_14.reg_subparser(subparsers)
+    etbl.reg_subparser(subparsers)
+    etre.reg_subparser(subparsers)
+    evfr.reg_subparser(subparsers)
+    eske.reg_subparser(subparsers)
+    scanner.reg_subparser(subparsers)
+    eagerlever.reg_subparser(subparsers)
+    expa.reg_subparser(subparsers)
+    ms06040rpc_dumped.reg_subparser(subparsers)
+    emerald_thread_touch.reg_subparser(subparsers)
+    oddjob_config.reg_subparser(subparsers)
     mofconfig.reg_subparser(subparsers)
     pcdlllauncher.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----

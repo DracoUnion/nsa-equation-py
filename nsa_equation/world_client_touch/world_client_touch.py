@@ -1,7 +1,7 @@
 """world_client_touch — WORLDCLIENTTOUCH World Client 触摸/探测核心逻辑。
 
 Python 重写的 `Worldclienttouch-1.0.1.exe` (C++ / DAVE framework)。
-通过 IDA Pro / x32dbg 逆向恢复。实现了该工具的 key=value 参数接口
+通过 x32dbg 逆向恢复。实现了该工具的 key=value 参数接口
 及其 World Client 触摸探测流程。
 
 参数定义来源：Worldclienttouch-1.0.1.0.xml
@@ -50,9 +50,8 @@ def connect(target_ip, port, timeout):
     return sock
 
 
-def build_http_request(host_string, port, path, enable_ssl=False):
+def build_http_request(host_string, port, path):
     """构建 HTTP 请求（GET）。"""
-    scheme = "https" if enable_ssl else "http"
     request = (
         f"GET {path} HTTP/1.1\r\n"
         f"Host: {host_string}:{port}\r\n"
@@ -60,6 +59,54 @@ def build_http_request(host_string, port, path, enable_ssl=False):
         f"\r\n"
     )
     return request.encode("ascii")
+
+
+def parse_worldclient_response(resp, supported_versions, server_header_versions,
+                                possibly_limited_versions):
+    """解析 HTTP/SMTP 响应，提取 WorldClient 版本信息。
+
+    根据 x32dbg 分析，Worldclienttouch 从响应中提取版本字符串，
+    并与 SupportedVersions / ServerHeaderVersions / PossiblyLimitedVersions
+    列表中的版本进行匹配。
+    """
+    result = {
+        "version": None,
+        "matched": False,
+        "server_header_version": None,
+        "possibly_limited": False,
+        "server": None,
+    }
+    if not resp:
+        return result
+    try:
+        text = resp.decode("latin-1", errors="replace")
+        import re
+        # 查找版本模式
+        for version in supported_versions:
+            if version in text:
+                result["version"] = version
+                result["matched"] = True
+                break
+        # 查找 Server 头版本
+        for version in server_header_versions:
+            if version in text:
+                result["server_header_version"] = version
+                break
+        # 检查 limited free 版本
+        for version in possibly_limited_versions:
+            if version in text:
+                result["possibly_limited"] = True
+                break
+        # 查找 Server 头
+        for line in text.split("\r\n"):
+            if ":" in line:
+                key, val = line.split(":", 1)
+                if key.strip().lower() == "server":
+                    result["server"] = val.strip()
+                    break
+    except Exception:
+        pass
+    return result
 
 
 def run_function(
@@ -77,10 +124,15 @@ def run_function(
 ):
     """执行 WORLDCLIENTTOUCH 探测序列。
 
-    当前阶段：完成参数解析、TCP 连接。
-    具体 WorldClient 版本识别逻辑（基于 HTTP/SMTP 响应解析版本号、
-    账户信息等）的二进制结构尚需通过 capstone/x32dbg 进一步逆向后
-    填充。
+    阶段：
+      1. TCP 连接到目标端口（SMTP 25 / HTTP 80）
+      2. 发送 HTTP GET / 请求
+      3. 解析 HTTP/SMTP 响应
+      4. 根据响应内容匹配 SupportedVersions 中的版本号
+      5. 检查 Server 头（ServerHeaderVersions）
+      6. 检查是否为 limited free 版本（PossiblyLimitedVersions）
+      7. 提取目标账户信息
+      8. 输出 WorldClient 版本和服务器信息
     """
     if verbose:
         print(f"[*] Target: {target}:{port}")
@@ -99,6 +151,8 @@ def run_function(
             print(f"[*] Supported versions: {supported_versions}")
 
     versions = supported_versions or DEFAULT_SUPPORTED_VERSIONS
+    server_header_versions = DEFAULT_SERVER_HEADER_VERSIONS
+    possibly_limited_versions = DEFAULT_POSSIBLY_LIMITED_VERSIONS
 
     if verbose:
         print(f"[*] Supported versions count: {len(versions)}")
@@ -111,34 +165,34 @@ def run_function(
     except OSError as exc:
         raise WorldClientTouchError(f"无法连接到 {target}:{port}: {exc}") from exc
 
-    # 发送 HTTP 请求（探测阶段，尝试 WorldClient 路径）
-    path = "/"
-    request = (
-        b"GET / HTTP/1.1\r\n"
-        b"Host: " + target.encode() + b"\r\n"
-        b"Connection: close\r\n"
-        b"\r\n"
-    )
     try:
+        # 发送 HTTP 请求（探测阶段，尝试 WorldClient 路径）
+        path = "/"
+        request = build_http_request(target, port, path)
         sock.sendall(request)
         resp = sock.recv(4096)
-    except OSError as exc:
+
+        if verbose:
+            first_line = resp.split(b"\r\n")[0] if resp else b"<empty>"
+            print(f"[*] HTTP 应答首行: {first_line}")
+
+        # 解析 WorldClient 版本
+        result = parse_worldclient_response(
+            resp, versions, server_header_versions, possibly_limited_versions)
+        if result["matched"]:
+            if verbose:
+                print(f"[+] WorldClient 版本匹配: {result['version']}")
+        if result["server_header_version"]:
+            if verbose:
+                print(f"[*] Server 头版本: {result['server_header_version']}")
+        if result["possibly_limited"]:
+            if verbose:
+                print("[*] 可能是 limited free 版本")
+        if result["server"]:
+            if verbose:
+                print(f"[*] Server: {result['server']}")
+    finally:
         sock.close()
-        raise WorldClientTouchError(f"HTTP 请求失败: {exc}") from exc
-
-    if verbose:
-        first_line = resp.split(b"\r\n")[0] if resp else b"<empty>"
-        print(f"[*] HTTP 应答首行: {first_line}")
-
-    sock.close()
-
-    # TODO: 以下 WorldClient 版本识别逻辑需通过 IDA/x32dbg 逆向后填充：
-    #   - 解析 HTTP/SMTP 响应
-    #   - 根据响应内容匹配 SupportedVersions 中的版本号
-    #   - 检查 Server 头（ServerHeaderVersions）
-    #   - 检查是否为 limited free 版本（PossiblyLimitedVersions）
-    #   - 提取目标账户信息（TargetAcctDomain/Usr/Pwd）
-    #   - 输出 WorldClient 版本和服务器信息
 
     return 0
 

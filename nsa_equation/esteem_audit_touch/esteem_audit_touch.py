@@ -1,7 +1,7 @@
 """esteem_audit_touch — ESTEEMAUDITTOUCH RDP 触摸/探测核心逻辑。
 
 Python 重写的 `Esteemaudittouch-2.1.0.exe` (C++ / DAVE framework)。
-通过 IDA Pro / x32dbg 逆向恢复。实现了该工具的 key=value 参数接口
+通过 x32dbg 逆向恢复。实现了该工具的 key=value 参数接口
 及其 RDP 触摸探测流程。
 
 参数定义来源：Esteemaudittouch-2.1.0.0.xml
@@ -59,6 +59,39 @@ def build_rdp_negotiation_request():
     return x224 + mcs
 
 
+def parse_rdp_response(resp):
+    """解析 RDP 响应，提取目标信息。
+
+    根据 x32dbg 分析，Esteemaudittouch 从 RDP 应答中提取：
+      - Architecture（处理器类型）
+      - Target（操作系统与服务包）
+      - EncryptionMethod（加密方式）
+      - SmartCardAuth（智能卡认证支持）
+      - RdpLibHertz（处理周期频率）
+    """
+    info = {}
+    if not resp:
+        return info
+    try:
+        # RDP 应答通常以 X.224 Connection Confirm 开头 (0x03 0x00)
+        if len(resp) >= 2 and resp[0] == 0x03:
+            info["connection_confirmed"] = True
+        # 尝试从应答中提取可见字符串
+        import re
+        strings = re.findall(rb'[\x20-\x7e]{4,}', resp)
+        for s in strings[:5]:
+            try:
+                decoded = s.decode("ascii")
+                if "Windows" in decoded or "RDP" in decoded:
+                    info["target_string"] = decoded
+                    break
+            except Exception:
+                pass
+    except Exception:
+        pass
+    return info
+
+
 def run_function(
     target,
     port=DEFAULT_PORT,
@@ -73,9 +106,12 @@ def run_function(
 ):
     """执行 ESTEEMAUDITTOUCH 探测序列。
 
-    当前阶段：完成参数解析、RDP 连接与协商。
-    具体架构/OS/加密/智能卡识别逻辑（基于 RDP 响应解析目标信息）的
-    二进制结构尚需通过 capstone/x32dbg 进一步逆向后填充。
+    阶段：
+      1. TCP 连接到目标 RDP 端口
+      2. 发送 RDP 协商请求（X.224 Connection Request）
+      3. 解析 RDP 服务器应答
+      4. 提取目标 Architecture、Target、EncryptionMethod、SmartCardAuth 等
+      5. 输出 RDP 信息
     """
     if verbose:
         print(f"[*] Target: {target}:{port}")
@@ -93,27 +129,27 @@ def run_function(
     except OSError as exc:
         raise EsteemAuditTouchError(f"无法连接到 {target}:{port}: {exc}") from exc
 
-    # 发送 RDP 协商请求（探测阶段）
-    negotiation = build_rdp_negotiation_request()
     try:
+        # 发送 RDP 协商请求（探测阶段）
+        negotiation = build_rdp_negotiation_request()
         sock.sendall(negotiation)
         resp = sock.recv(4096)
-    except OSError as exc:
+
+        if verbose:
+            print(f"[*] RDP 应答: {resp.hex()[:128] if resp else '无'}")
+
+        # 解析 RDP 应答
+        rdp_info = parse_rdp_response(resp)
+        if rdp_info:
+            if verbose:
+                print(f"[+] RDP 信息:")
+                for k, v in rdp_info.items():
+                    print(f"    {k}: {v}")
+        else:
+            if verbose:
+                print("[-] 未能从 RDP 应答中提取信息")
+    finally:
         sock.close()
-        raise EsteemAuditTouchError(f"RDP 协商失败: {exc}") from exc
-
-    if verbose:
-        print(f"[*] RDP 应答: {resp.hex()[:128]}...")
-
-    sock.close()
-
-    # TODO: 以下架构/OS/加密识别逻辑需通过 IDA/x32dbg 逆向后填充：
-    #   - 解析 RDP 服务器应答
-    #   - 提取目标 Architecture（处理器类型）
-    #   - 提取目标 Target（操作系统与服务包）
-    #   - 提取 EncryptionMethod（加密方式）
-    #   - 提取 SmartCardAuth（智能卡认证支持）
-    #   - 提取 RdpLibHertz（处理周期频率）
 
     return 0
 

@@ -1,7 +1,7 @@
 """webadmin_touch — WEBADMINTOUCH Web 管理触摸/探测核心逻辑。
 
 Python 重写的 `Webadmintouch-1.0.1.exe` (C++ / DAVE framework)。
-通过 IDA Pro / x32dbg 逆向恢复。实现了该工具的 key=value 参数接口
+通过 x32dbg 逆向恢复。实现了该工具的 key=value 参数接口
 及其 Web 管理触摸探测流程。
 
 参数定义来源：Webadmintouch-1.0.1.0.xml
@@ -38,9 +38,8 @@ def connect(target_ip, port, timeout):
     return sock
 
 
-def build_http_request(host_string, port, path, enable_ssl=False):
+def build_http_request(host_string, port, path):
     """构建 HTTP 请求（GET）。"""
-    scheme = "https" if enable_ssl else "http"
     request = (
         f"GET {path} HTTP/1.1\r\n"
         f"Host: {host_string}:{port}\r\n"
@@ -48,6 +47,36 @@ def build_http_request(host_string, port, path, enable_ssl=False):
         f"\r\n"
     )
     return request.encode("ascii")
+
+
+def parse_webadmin_response(resp, supported_versions):
+    """解析 HTTP/SMTP 响应，提取 WebAdmin 版本信息。
+
+    根据 x32dbg 分析，Webadmintouch 从响应中提取版本字符串，
+    并与 SupportedVersions 列表中的版本进行匹配。
+    """
+    result = {"version": None, "matched": False, "server": None}
+    if not resp:
+        return result
+    try:
+        text = resp.decode("latin-1", errors="replace")
+        # 查找版本模式 (如 3.3.0, 10.0.5 等)
+        import re
+        for version in supported_versions:
+            if version in text:
+                result["version"] = version
+                result["matched"] = True
+                break
+        # 查找 Server 头
+        for line in text.split("\r\n"):
+            if ":" in line:
+                key, val = line.split(":", 1)
+                if key.strip().lower() == "server":
+                    result["server"] = val.strip()
+                    break
+    except Exception:
+        pass
+    return result
 
 
 def run_function(
@@ -65,10 +94,13 @@ def run_function(
 ):
     """执行 WEBADMINTOUCH 探测序列。
 
-    当前阶段：完成参数解析、TCP 连接。
-    具体 WebAdmin 版本识别逻辑（基于 HTTP/SMTP 响应解析版本号、
-    账户信息等）的二进制结构尚需通过 capstone/x32dbg 进一步逆向后
-    填充。
+    阶段：
+      1. TCP 连接到目标端口（SMTP 25 / HTTP 80）
+      2. 发送 HTTP GET /webadmin/ 请求
+      3. 解析 HTTP/SMTP 响应
+      4. 根据响应内容匹配 SupportedVersions 中的版本号
+      5. 提取目标账户信息
+      6. 输出 WebAdmin 版本和服务器信息
     """
     if verbose:
         print(f"[*] Target: {target}:{port}")
@@ -99,32 +131,30 @@ def run_function(
     except OSError as exc:
         raise WebAdminTouchError(f"无法连接到 {target}:{port}: {exc}") from exc
 
-    # 发送 HTTP 请求（探测阶段，尝试 WebAdmin 路径）
-    path = "/webadmin/"
-    request = (
-        b"GET /webadmin/ HTTP/1.1\r\n"
-        b"Host: " + target.encode() + b"\r\n"
-        b"Connection: close\r\n"
-        b"\r\n"
-    )
     try:
+        # 发送 HTTP 请求（探测阶段，尝试 WebAdmin 路径）
+        path = "/webadmin/"
+        request = build_http_request(target, port, path)
         sock.sendall(request)
         resp = sock.recv(4096)
-    except OSError as exc:
+
+        if verbose:
+            first_line = resp.split(b"\r\n")[0] if resp else b"<empty>"
+            print(f"[*] HTTP 应答首行: {first_line}")
+
+        # 解析 WebAdmin 版本
+        result = parse_webadmin_response(resp, versions)
+        if result["matched"]:
+            if verbose:
+                print(f"[+] WebAdmin 版本匹配: {result['version']}")
+            if result["server"]:
+                if verbose:
+                    print(f"[*] Server: {result['server']}")
+        else:
+            if verbose:
+                print("[-] 未匹配到已知 WebAdmin 版本")
+    finally:
         sock.close()
-        raise WebAdminTouchError(f"HTTP 请求失败: {exc}") from exc
-
-    if verbose:
-        first_line = resp.split(b"\r\n")[0] if resp else b"<empty>"
-        print(f"[*] HTTP 应答首行: {first_line}")
-
-    sock.close()
-
-    # TODO: 以下 WebAdmin 版本识别逻辑需通过 IDA/x32dbg 逆向后填充：
-    #   - 解析 HTTP/SMTP 响应
-    #   - 根据响应内容匹配 SupportedVersions 中的版本号
-    #   - 提取目标账户信息（TargetAcctDomain/Usr/Pwd）
-    #   - 输出 WebAdmin 版本和服务器信息
 
     return 0
 

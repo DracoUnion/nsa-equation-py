@@ -70,3 +70,4 @@ from . import eafu
 from . import eternal_synergy
 from . import eternal_synergy_14
 from . import mofconfig
+from . import pcdlllauncher

