@@ -18,6 +18,7 @@ from . import rpcproxy
 from . import rpctouch
 from . import danecfg
 from . import eternal_champion
+from . import eternal_romance
 # ---- 12008smbexp kit port ----
 from . import smbexp
 # ---- Legacy tools ports ----
@@ -68,6 +69,7 @@ def main():
     rpctouch.reg_subparser(subparsers)
     danecfg.reg_subparser(subparsers)
     eternal_champion.reg_subparser(subparsers)
+    eternal_romance.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)
     # ---- Legacy tools ports ----
