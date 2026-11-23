@@ -27,6 +27,7 @@ from . import emerald_thread
 from . import ecwi
 from . import smb_touch
 from . import archi_touch
+from . import domain_touch
 # ---- 12008smbexp kit port ----
 from . import smbexp
 # ---- Legacy tools ports ----
@@ -61,6 +62,7 @@ from . import setourip
 # ecwi              EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Exploits/ECWI/ecwi.exe
 # smb-touch         EQGRP_Lost_in_Translation-master/windows/touches/Smbtouch-1.1.1.exe
 # archi-touch       EQGRP_Lost_in_Translation-master/windows/touches/Architouch-1.0.0.exe
+# domain-touch      EQGRP_Lost_in_Translation-master/windows/touches/Domaintouch-1.1.1.exe
 # smbexp            12008smbexp/smbexp.exe
 # setourip          EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Resources/Tools/SetOurIp.exe
 #
@@ -121,6 +123,7 @@ def main():
     ecwi.reg_subparser(subparsers)
     smb_touch.reg_subparser(subparsers)
     archi_touch.reg_subparser(subparsers)
+    domain_touch.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)
     # ---- Legacy tools ports ----
