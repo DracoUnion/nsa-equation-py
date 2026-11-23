@@ -77,6 +77,7 @@ from . import sc
 from . import eagerlever
 from . import scanner
 from . import expa
+from . import simrpc
 from . import mofconfig
 from . import eskimo_roll
 from . import eskimo_roll
@@ -267,6 +268,7 @@ def main():
     scanner.reg_subparser(subparsers)
     eagerlever.reg_subparser(subparsers)
     expa.reg_subparser(subparsers)
+    simrpc.reg_subparser(subparsers)
     w9xpopen.reg_subparser(subparsers)
     sc.reg_subparser(subparsers)
     ms06040rpc_dumped.reg_subparser(subparsers)
