@@ -24,6 +24,7 @@ from . import esteem_audit
 from . import erratic_gopher
 from . import educated_scholar
 from . import emerald_thread
+from . import ecwi
 # ---- 12008smbexp kit port ----
 from . import smbexp
 # ---- Legacy tools ports ----
@@ -55,6 +56,7 @@ from . import setourip
 # esteem-audit      EQGRP_Lost_in_Translation-master/windows/exploits/Esteemaudit-2.1.0.exe
 # educated-scholar  EQGRP_Lost_in_Translation-master/windows/exploits/Educatedscholar-1.0.0.exe
 # emerald-thread    EQGRP_Lost_in_Translation-master/windows/exploits/Emeraldthread-3.0.0.exe
+# ecwi              EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Exploits/ECWI/ecwi.exe
 # smbexp            12008smbexp/smbexp.exe
 # setourip          EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Resources/Tools/SetOurIp.exe
 #
@@ -112,6 +114,7 @@ def main():
     esteem_audit.reg_subparser(subparsers)
     educated_scholar.reg_subparser(subparsers)
     emerald_thread.reg_subparser(subparsers)
+    ecwi.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)
     # ---- Legacy tools ports ----
