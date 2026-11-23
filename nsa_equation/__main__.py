@@ -94,6 +94,7 @@ from . import pc_lp
 from . import yak
 from . import tacothief
 from . import renamer
+from . import promiscdetect
 from . import eskimo_roll
 from . import eskimo_roll
 # ---- 12008smbexp kit port ----
@@ -306,6 +307,7 @@ def main():
     yak.reg_subparser(subparsers)
     tacothief.reg_subparser(subparsers)
     renamer.reg_subparser(subparsers)
+    promiscdetect.reg_subparser(subparsers)
     pcdlllauncher.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)
