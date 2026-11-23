@@ -45,6 +45,7 @@ from . import printjob_list
 from . import job_add
 from . import job_delete
 from . import job_list
+from . import process_list
 # ---- 12008smbexp kit port ----
 from . import smbexp
 # ---- Legacy tools ports ----
@@ -97,6 +98,7 @@ from . import setourip
 # job-add                 EQGRP_Lost_in_Translation-master/windows/payloads/Jobadd-1.1.1.exe
 # job-delete              EQGRP_Lost_in_Translation-master/windows/payloads/Jobdelete-1.1.1.exe
 # job-list                EQGRP_Lost_in_Translation-master/windows/payloads/Joblist-1.1.1.exe
+# process-list            EQGRP_Lost_in_Translation-master/windows/payloads/Processlist-1.1.1.exe
 # smbexp            12008smbexp/smbexp.exe
 # setourip          EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Resources/Tools/SetOurIp.exe
 #
@@ -175,6 +177,7 @@ def main():
     job_add.reg_subparser(subparsers)
     job_delete.reg_subparser(subparsers)
     job_list.reg_subparser(subparsers)
+    process_list.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)
     # ---- Legacy tools ports ----
