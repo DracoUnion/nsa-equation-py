@@ -29,6 +29,7 @@ from . import smb_touch
 from . import archi_touch
 from . import domain_touch
 from . import educated_scholar_touch
+from . import erratic_gopher_touch
 # ---- 12008smbexp kit port ----
 from . import smbexp
 # ---- Legacy tools ports ----
@@ -65,6 +66,7 @@ from . import setourip
 # archi-touch       EQGRP_Lost_in_Translation-master/windows/touches/Architouch-1.0.0.exe
 # domain-touch      EQGRP_Lost_in_Translation-master/windows/touches/Domaintouch-1.1.1.exe
 # educated-scholar-touch  EQGRP_Lost_in_Translation-master/windows/touches/Educatedscholartouch-1.0.0.exe
+# erratic-gopher-touch    EQGRP_Lost_in_Translation-master/windows/touches/Erraticgophertouch-1.0.1.exe
 # smbexp            12008smbexp/smbexp.exe
 # setourip          EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Resources/Tools/SetOurIp.exe
 #
@@ -127,6 +129,7 @@ def main():
     archi_touch.reg_subparser(subparsers)
     domain_touch.reg_subparser(subparsers)
     educated_scholar_touch.reg_subparser(subparsers)
+    erratic_gopher_touch.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)
     # ---- Legacy tools ports ----
