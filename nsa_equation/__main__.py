@@ -96,6 +96,7 @@ from . import tacothief
 from . import renamer
 from . import promiscdetect
 from . import papercut
+from . import bpfcompiler
 from . import eskimo_roll
 from . import eskimo_roll
 # ---- 12008smbexp kit port ----
@@ -310,6 +311,7 @@ def main():
     renamer.reg_subparser(subparsers)
     promiscdetect.reg_subparser(subparsers)
     papercut.reg_subparser(subparsers)
+    bpfcompiler.reg_subparser(subparsers)
     pcdlllauncher.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)
