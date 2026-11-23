@@ -20,6 +20,7 @@ from . import danecfg
 from . import eternal_champion
 from . import eternal_romance
 from . import exploding_can
+from . import esteem_audit
 # ---- 12008smbexp kit port ----
 from . import smbexp
 # ---- Legacy tools ports ----
@@ -48,6 +49,7 @@ from . import setourip
 # eternal-champion  EQGRP_Lost_in_Translation-master/windows/specials/Eternalchampion-2.0.0.exe
 # eternal-romance   EQGRP_Lost_in_Translation-master/windows/exploits/Eternalromance-1.3.0.exe
 # exploding-can     EQGRP_Lost_in_Translation-master/windows/exploits/Explodingcan-2.0.2.exe
+# esteem-audit      EQGRP_Lost_in_Translation-master/windows/exploits/Esteemaudit-2.1.0.exe
 # smbexp            12008smbexp/smbexp.exe
 # setourip          EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Resources/Tools/SetOurIp.exe
 #
@@ -102,6 +104,7 @@ def main():
     eternal_champion.reg_subparser(subparsers)
     eternal_romance.reg_subparser(subparsers)
     exploding_can.reg_subparser(subparsers)
+    esteem_audit.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)
     # ---- Legacy tools ports ----
