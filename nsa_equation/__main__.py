@@ -92,6 +92,7 @@ from . import setports
 from . import setresourcename
 from . import pc_lp
 from . import yak
+from . import tacothief
 from . import eskimo_roll
 from . import eskimo_roll
 # ---- 12008smbexp kit port ----
@@ -302,6 +303,7 @@ def main():
     setresourcename.reg_subparser(subparsers)
     pc_lp.reg_subparser(subparsers)
     yak.reg_subparser(subparsers)
+    tacothief.reg_subparser(subparsers)
     pcdlllauncher.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)
