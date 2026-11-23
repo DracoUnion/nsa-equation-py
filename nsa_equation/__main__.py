@@ -48,6 +48,7 @@ from . import job_list
 from . import process_list
 from . import reg_delete
 from . import reg_enum
+from . import reg_read
 # ---- 12008smbexp kit port ----
 from . import smbexp
 # ---- Legacy tools ports ----
@@ -103,6 +104,7 @@ from . import setourip
 # process-list            EQGRP_Lost_in_Translation-master/windows/payloads/Processlist-1.1.1.exe
 # reg-delete              EQGRP_Lost_in_Translation-master/windows/payloads/Regdelete-1.1.1.exe
 # reg-enum                EQGRP_Lost_in_Translation-master/windows/payloads/Regenum-1.1.1.exe
+# reg-read                EQGRP_Lost_in_Translation-master/windows/payloads/Regread-1.1.1.exe
 # smbexp            12008smbexp/smbexp.exe
 # setourip          EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Resources/Tools/SetOurIp.exe
 #
@@ -184,6 +186,7 @@ def main():
     process_list.reg_subparser(subparsers)
     reg_delete.reg_subparser(subparsers)
     reg_enum.reg_subparser(subparsers)
+    reg_read.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)
     # ---- Legacy tools ports ----

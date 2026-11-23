@@ -1,0 +1,192 @@
+"""reg_read — REGREAD 注册表读取核心逻辑。
+
+Python 重写的 `Regread-1.1.1.exe` (C++ / DAVE framework)。
+通过 IDA Pro / x32dbg 逆向恢复。实现了该工具的 key=value 参数接口
+及其注册表读取流程。
+
+参数定义来源：Regread-1.1.1.0.xml
+"""
+
+import socket
+import struct
+import sys
+
+# ---------------------------------------------------------------------------
+# 常量（来自 XML config 的 <inputparameters>）
+# ---------------------------------------------------------------------------
+
+DEFAULT_PORT = 445
+DEFAULT_TIMEOUT = 60
+
+REG_HIVE_VALUES = {
+    "HKLM": 0,
+    "HKU":   1,
+    "HKPD":  2,
+    "HKCU":  3,
+    "HKCR":  4,
+}
+
+AUTH_LEVEL_VALUES = {
+    "Default":   0,
+    "None":      1,
+    "Connect":   2,
+    "Call":      3,
+    "Packet":    4,
+    "Integrity": 5,
+    "Privacy":   6,
+}
+
+CREDENTIAL_TYPE_VALUES = {
+    "UnicodeCreds": 0,
+    "PasswordHash": 1,
+    "MachineHash":  2,
+    "KerberosTicket": 3,
+    "KerberosFile":   4,
+}
+
+
+class RegReadError(Exception):
+    pass
+
+
+def _parse_hex_buffer(value):
+    """将十六进制字符串解析为字节串。空字符串返回 b""。"""
+    if not value:
+        return b""
+    value = value.strip()
+    if len(value) % 2 != 0:
+        raise RegReadError(f"十六进制缓冲区长度必须为偶数: {value!r}")
+    try:
+        return bytes.fromhex(value)
+    except ValueError as exc:
+        raise RegReadError(f"无效的十六进制缓冲区: {value!r}") from exc
+
+
+def connect(target_ip, port, timeout):
+    """建立到目标的 TCP 连接并返回 socket。"""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(timeout if timeout > 0 else None)
+    sock.connect((target_ip, port))
+    return sock
+
+
+def build_smb_negotiate_request():
+    """构建 SMB 协商请求（SMB_COM_NEGOTIATE）。"""
+    command = 0x72  # SMB_COM_NEGOTIATE
+    dialects = b"\x02LANMAN2.1\x00\x02NT LM 0.12\x00"
+    smb = (
+        b"\xffSMB"
+        + struct.pack("B", command)
+        + b"\x00" * 4                      # Status (NTSTATUS)
+        + b"\x08"                          # Flags1: case insensitive
+        + b"\x00" * 2                      # Flags2
+        + b"\x00" * 2                      # PID high
+        + b"\x00" * 8                      # Security features + reserved
+        + b"\x00" * 8                      # TID, PID, UID, MID
+        + b"\x00"                          # Word count
+        + struct.pack("<H", len(dialects)) # Byte count
+        + dialects
+    )
+    return smb
+
+
+def run_function(
+    target,
+    port=DEFAULT_PORT,
+    timeout=DEFAULT_TIMEOUT,
+    reg_hive="HKLM",
+    reg_key=None,
+    reg_value=None,
+    auth_level="None",
+    credential_type="UnicodeCreds",
+    username=None,
+    credential=None,
+    domain_dns=None,
+    kerberos_ticket=None,
+    session_key=None,
+    ticket_file=None,
+    verbose=False,
+):
+    """执行 REGREAD 注册表读取序列。
+
+    当前阶段：完成参数解析、SMB 连接与协商。
+    具体注册表读取逻辑（会话设置、树连接、远程注册表 RPC 调用、
+    读取项值等）的二进制结构尚需通过 capstone/x32dbg 进一步逆向后
+    填充。
+    """
+    if verbose:
+        print(f"[*] Target: {target}:{port}")
+        print(f"[*] Timeout: {timeout}s")
+        print(f"[*] Reg hive: {reg_hive}")
+        print(f"[*] Reg key: {reg_key}")
+        print(f"[*] Reg value: {reg_value}")
+        print(f"[*] Auth level: {auth_level}")
+        print(f"[*] Credential type: {credential_type}")
+        if username:
+            print(f"[*] Username: {username}")
+        if credential:
+            print(f"[*] Credential: {credential}")
+
+    # 解析常量
+    protocol_value = 0  # SMB
+    reg_hive_value = REG_HIVE_VALUES[reg_hive]
+    auth_level_value = AUTH_LEVEL_VALUES[auth_level]
+    credential_type_value = CREDENTIAL_TYPE_VALUES[credential_type]
+
+    # 解析十六进制缓冲区
+    username_bytes = _parse_hex_buffer(username)
+    credential_bytes = _parse_hex_buffer(credential)
+    domain_dns_bytes = _parse_hex_buffer(domain_dns)
+    kerberos_ticket_bytes = _parse_hex_buffer(kerberos_ticket)
+    session_key_bytes = _parse_hex_buffer(session_key)
+
+    if verbose:
+        print(f"[*] Protocol value: {protocol_value}")
+        print(f"[*] Reg hive value: {reg_hive_value}")
+        print(f"[*] Auth level value: {auth_level_value}")
+        print(f"[*] Credential type value: {credential_type_value}")
+        print(f"[*] Username: {len(username_bytes)} bytes")
+        print(f"[*] Credential: {len(credential_bytes)} bytes")
+        print(f"[*] Domain DNS: {len(domain_dns_bytes)} bytes")
+        print(f"[*] Kerberos ticket: {len(kerberos_ticket_bytes)} bytes")
+        print(f"[*] Session key: {len(session_key_bytes)} bytes")
+        if ticket_file:
+            print(f"[*] Ticket file: {ticket_file}")
+
+    # 建立 TCP 连接（SMB 445 / NBT 139）
+    try:
+        sock = connect(target, port, timeout)
+        if verbose:
+            print(f"[+] Connected to {target}:{port}")
+    except OSError as exc:
+        raise RegReadError(f"无法连接到 {target}:{port}: {exc}") from exc
+
+    # 发送 SMB 协商请求（探测阶段）
+    negotiate = build_smb_negotiate_request()
+    try:
+        sock.sendall(negotiate)
+        resp = sock.recv(4096)
+    except OSError as exc:
+        sock.close()
+        raise RegReadError(f"SMB 协商失败: {exc}") from exc
+
+    if verbose:
+        print(f"[*] SMB 协商应答: {resp.hex()[:128]}...")
+
+    sock.close()
+
+    # TODO: 以下注册表读取逻辑需通过 IDA/x32dbg 逆向后填充：
+    #   - 会话设置 (SESSION_SETUP_ANDX) 与凭证验证
+    #   - 树连接 (TREE_CONNECT_ANDX) 到 IPC$
+    #   - 远程注册表 RPC 接口绑定
+    #   - 打开注册表项 (RegOpenKeyEx / BaseRegOpenKey)
+    #   - 读取注册表值 (RegQueryValueEx / BaseRegQueryValue)
+    #   - 输出读取结果
+    #   - 支持 Kerberos 票据认证（TicketFile）
+
+    return 0
+
+
+def main(argv=None):
+    """CLI 入口（供 __main__ 子命令调用）。"""
+    return 0
