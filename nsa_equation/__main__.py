@@ -36,6 +36,7 @@ from . import iis_touch
 from . import namedpipe_touch
 from . import webadmin_touch
 from . import world_client_touch
+from . import smb_delete
 # ---- 12008smbexp kit port ----
 from . import smbexp
 # ---- Legacy tools ports ----
@@ -79,6 +80,7 @@ from . import setourip
 # namedpipe-touch         EQGRP_Lost_in_Translation-master/windows/touches/Namedpipetouch-2.0.0.exe
 # webadmin-touch          EQGRP_Lost_in_Translation-master/windows/touches/Webadmintouch-1.0.1.exe
 # world-client-touch      EQGRP_Lost_in_Translation-master/windows/touches/Worldclienttouch-1.0.1.exe
+# smb-delete              EQGRP_Lost_in_Translation-master/windows/payloads/Smbdelete-1.1.1.exe
 # smbexp            12008smbexp/smbexp.exe
 # setourip          EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Resources/Tools/SetOurIp.exe
 #
@@ -148,6 +150,7 @@ def main():
     namedpipe_touch.reg_subparser(subparsers)
     webadmin_touch.reg_subparser(subparsers)
     world_client_touch.reg_subparser(subparsers)
+    smb_delete.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)
     # ---- Legacy tools ports ----
