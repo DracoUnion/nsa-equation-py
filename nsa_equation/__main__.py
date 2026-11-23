@@ -52,6 +52,7 @@ from . import reg_read
 from . import reg_write
 from . import easybee
 from . import easy_pi
+from . import englishmansdentist
 from . import emphasis_mine
 # ---- 12008smbexp kit port ----
 from . import smbexp
@@ -112,6 +113,7 @@ from . import setourip
 # reg-write               EQGRP_Lost_in_Translation-master/windows/payloads/Regwrite-1.1.1.exe
 # easybee                 EQGRP_Lost_in_Translation-master/windows/exploits/Easybee-1.0.1.exe
 # easy-pi                 EQGRP_Lost_in_Translation-master/windows/exploits/Easypi-3.1.0.exe
+# englishmansdentist      EQGRP_Lost_in_Translation-master/windows/exploits/Englishmansdentist-1.2.0.exe
 # emphasis-mine           EQGRP_Lost_in_Translation-master/windows/exploits/Emphasismine-3.4.0.exe
 # smbexp            12008smbexp/smbexp.exe
 # setourip          EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Resources/Tools/SetOurIp.exe
@@ -198,6 +200,7 @@ def main():
     reg_write.reg_subparser(subparsers)
     easybee.reg_subparser(subparsers)
     easy_pi.reg_subparser(subparsers)
+    englishmansdentist.reg_subparser(subparsers)
     emphasis_mine.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)
