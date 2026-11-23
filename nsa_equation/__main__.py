@@ -25,6 +25,35 @@ from . import smbexp
 from . import setourip
 
 
+# ---------------------------------------------------------------------------
+# Subcommand -> original binary mapping (方程式工具包图形界面版 v0.68)
+# ---------------------------------------------------------------------------
+# Subcommand        Original .exe (relative to v0.68 root)
+# ----------------- ----------------------------------------------------------------
+# dns               1MS07-029-DNS/dns.exe
+# smbv3-scan        1Tools/CVE-2020-0796-Scanner.exe
+# smbv3-exp         1Tools/CVE-2020-0796-EXP.exe
+# get-arch          1Tools/getArch.exe
+# netapi32-exp      1ms06040rpc_Modified/ms06040rpc.exe
+# reternal-blue     EQGRP_Lost_in_Translation-master/windows/specials/Eternalblue-2.2.0.exe
+# rpc-exp           1ms06040rpc_Modified/ms06040rpc_unpacked_v2.exe
+# eclipsedwing      Eclipsedwing-ms08-2000-xp-03-08/Eclipsedwing-1.5.2.exe
+# eclipsedwingtouch Eclipsedwing-ms08-2000-xp-03-08/Eclipsedwingtouch-1.0.4.exe
+# doublepulsar      Eclipsedwing-ms08-2000-xp-03-08/Doublepulsar-1.3.1.exe
+# pcdlllauncher     Eclipsedwing-ms08-2000-xp-03-08/Pcdlllauncher-2.3.1.exe
+# rpcproxy          Eclipsedwing-ms08-2000-xp-03-08/Rpcproxy-1.0.1.exe
+# rpctouch          Eclipsedwing-ms08-2000-xp-03-08/Rpctouch-2.1.0.exe
+# danecfg           Eclipsedwing-ms08-2000-xp-03-08/danecfg.exe
+# eternal-champion  EQGRP_Lost_in_Translation-master/windows/specials/Eternalchampion-2.0.0.exe
+# eternal-romance   EQGRP_Lost_in_Translation-master/windows/exploits/Eternalromance-1.3.0.exe
+# smbexp            12008smbexp/smbexp.exe
+# setourip          EQGRP_Lost_in_Translation-master/windows/Resources/LegacyWindowsExploits/Resources/Tools/SetOurIp.exe
+#
+# Not yet implemented (see traverse results): Eternalchampion exploit buffers,
+# Eternalromance Transaction-leak/backdoor buffers, and the remaining 122 tools
+# are pending reverse-engineering from IDA Pro / x32dbg.
+
+
 def main():
     argv = sys.argv[1:]
 
