@@ -82,6 +82,7 @@ from . import svctouch
 from . import ridearea2
 from . import mofconfig
 from . import makedmgd
+from . import genkey
 from . import eskimo_roll
 from . import eskimo_roll
 # ---- 12008smbexp kit port ----
@@ -282,6 +283,7 @@ def main():
     oj_deleter.reg_subparser(subparsers)
     mofconfig.reg_subparser(subparsers)
     makedmgd.reg_subparser(subparsers)
+    genkey.reg_subparser(subparsers)
     pcdlllauncher.reg_subparser(subparsers)
     # ---- 12008smbexp kit port ----
     smbexp.reg_subparser(subparsers)
