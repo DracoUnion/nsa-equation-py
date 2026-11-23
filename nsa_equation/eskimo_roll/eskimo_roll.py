@@ -67,7 +67,7 @@ def run_function(
     """执行 ESKIMOROLL 利用序列。
 
     当前阶段：完成参数解析、TCP 连接。
-    具体 Kerberos 利用缓冲区（Kerberos 票据构建、溢出利用等）的
+    具体 Kerberos 利用缓冲区（票据构建、溢出利用等）的
     二进制结构尚需通过 capstone/x32dbg 进一步逆向后填充。
     """
     if verbose:
@@ -78,12 +78,12 @@ def run_function(
         print(f"[*] Domain DNS: {domain_dns}")
         print(f"[*] Domain SID: {domain_sid}")
         print(f"[*] Credential type: {credential_type}")
-        if ticket_file:
-            print(f"[*] Ticket file: {ticket_file}")
         if username:
             print(f"[*] Username: {username}")
         if credential:
             print(f"[*] Credential: {credential}")
+        if ticket_file:
+            print(f"[*] Ticket file: {ticket_file}")
 
     # 解析常量
     credential_type_value = CREDENTIAL_TYPE_VALUES[credential_type]
@@ -97,7 +97,7 @@ def run_function(
         print(f"[*] Username: {len(username_bytes)} bytes")
         print(f"[*] Credential: {len(credential_bytes)} bytes")
 
-    # 建立到目标的 TCP 连接（Kerberos 88）
+    # 建立 TCP 连接（Kerberos 88）
     try:
         sock = connect(target, port, timeout)
         if verbose:

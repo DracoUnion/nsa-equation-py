@@ -60,6 +60,7 @@ from . import eafu
 from . import darkpulsar
 from . import eternal_synergy
 from . import mofconfig
+from . import eskimo_roll
 # ---- 12008smbexp kit port ----
 from . import smbexp
 # ---- Legacy tools ports ----

@@ -41,7 +41,7 @@ def reg_subparser(subparsers):
     )
     p.add_argument(
         "target", metavar="TARGET",
-        help="目标主机名或 IP（域控制器 IP 地址）",
+        help="目标主机名或 IP",
     )
     p.add_argument(
         "-p", "--port", type=int, default=88,
@@ -53,15 +53,15 @@ def reg_subparser(subparsers):
     )
     p.add_argument(
         "--delay", type=int, default=0,
-        help="数据包间等待秒数（默认 0）",
+        help="数据包间延迟秒数（默认 0）",
     )
     p.add_argument(
         "--ticket-file", metavar="FILE",
-        help="本地票据文件路径（留空表示仅在内存中）",
+        help="本地票据文件路径（留空为仅内存）",
     )
     p.add_argument(
         "--target-machine", metavar="NAME",
-        help="目标机器 NetBIOS 名称（Unicode）",
+        help="目标主机 NetBIOS 名称（Unicode）",
     )
     p.add_argument(
         "--domain-dns", metavar="DOMAIN",
