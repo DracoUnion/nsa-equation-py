@@ -115,6 +115,7 @@ from . import addresource
 from . import regprobe
 from . import nameprobe
 from . import xxxridearea
+from . import doublefeaturereader
 
 
 # ---------------------------------------------------------------------------
@@ -344,6 +345,7 @@ def main():
     regprobe.reg_subparser(subparsers)
     nameprobe.reg_subparser(subparsers)
     xxxridearea.reg_subparser(subparsers)
+    doublefeaturereader.reg_subparser(subparsers)
 
     args = parser.parse_args()
     sys.exit(args.func(args))
