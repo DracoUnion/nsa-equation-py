@@ -124,6 +124,7 @@ from . import sendddtrigger
 from . import sendpktrigger
 from . import sendpctrigger
 from . import pcconfig
+from . import rpc2
 
 
 # ---------------------------------------------------------------------------
@@ -362,6 +363,7 @@ def main():
     sendpktrigger.reg_subparser(subparsers)
     sendpctrigger.reg_subparser(subparsers)
     pcconfig.reg_subparser(subparsers)
+    rpc2.reg_subparser(subparsers)
 
     args = parser.parse_args()
     sys.exit(args.func(args))
