@@ -117,6 +117,7 @@ from . import nameprobe
 from . import xxxridearea
 from . import doublefeaturereader
 from . import elv
+from . import slDecoder
 from . import st_lp
 from . import sendcftrigger
 from . import sendddtrigger
@@ -354,6 +355,7 @@ def main():
     xxxridearea.reg_subparser(subparsers)
     doublefeaturereader.reg_subparser(subparsers)
     elv.reg_subparser(subparsers)
+    slDecoder.reg_subparser(subparsers)
     st_lp.reg_subparser(subparsers)
     sendcftrigger.reg_subparser(subparsers)
     sendddtrigger.reg_subparser(subparsers)
