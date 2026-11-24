@@ -1,83 +1,58 @@
-"""emphasis-mine — EMPHASISMINE Lotus Domino IMAP 远程利用。
+# -*- coding: utf-8 -*-
+"""
+emphasis_mine — Emphasismine (SMB) 利用。
 
-Python 重写的 NSA Emphasismine 工具 `Emphasismine-3.4.0.exe`
-(C++ / DAVE framework)，通过 IDA Pro / x32dbg 逆向恢复。
-实现了该工具的 key=value 参数接口及其 Lotus Domino IMAP 利用流程。
+Python 重写自 `Emphasismine-3.4.0.exe` (C++/MSVCRT)，位于
+`EQGRP_Lost_in_Translation-master/windows/exploits/`。
+
+建立在 nsa_equation/dave 统一协议库之上。
 """
 
-from . import emphasis_mine
+from . import emphasis_mine_exp
 
 
-# ---------------------------------------------------------------------------
-# Subcommand entrypoint.
-# ---------------------------------------------------------------------------
 def emphasis_mine_handle(args):
-    """Run the EMPHASISMINE exploitation sequence against the supplied host."""
-    return emphasis_mine.run_function(
-        target=args.target,
-        port=args.port,
-        timeout=args.timeout,
-        domino_version=args.domino_version,
-        target_acct_usr=args.target_acct_usr,
-        target_acct_pwd=args.target_acct_pwd,
-        credential_type=args.credential_type,
-        username=args.username,
-        credential=args.credential,
-        verbose=args.verbose,
+    """Run the Emphasismine tool."""
+    return emphasis_mine_exp.run(
+        target_ip=args.target_ip,
+        target_port=args.target_port,
+        callback_ip=args.callback_ip,
+        callback_port=args.callback_port,
+        callback_local_port=args.callback_local_port,
+        groom=args.groom,
+        max_attempts=args.max_attempts,
+        verify_target=args.verify_target,
+        verify_backdoor=args.verify_backdoor,
+        network_timeout=args.network_timeout,
+        xor_mask=args.xor_mask,
     )
 
 
 def reg_subparser(subparsers):
-    """Register the `emphasis-mine` subcommand on an argparse subparsers group."""
+    """Register the `emphasis_mine` subcommand on an argparse subparsers group."""
     p = subparsers.add_parser(
-        "emphasis-mine",
-        help="EMPHASISMINE Lotus Domino IMAP 远程利用",
-        description="Python 重写的 NSA Eskimoroll (EMPHASISMINE) Lotus "
-                    "Domino IMAP 远程利用工具 Eskimoroll-1.1.1。针对 Lotus "
-                    "Domino IMAP 服务器，执行缓冲区溢出利用。",
+        "emphasis_mine",
+        help="Emphasismine (SMB) 利用",
+        description="emphasis_mine — Emphasismine (SMB) 利用，基于 nsa_equation/dave 统一协议库。",
     )
-    p.add_argument(
-        "target", metavar="TARGET",
-        help="目标主机名或 IP",
-    )
-    p.add_argument(
-        "-p", "--port", type=int, default=143,
-        help="目标 IMAP 端口（默认 143）",
-    )
-    p.add_argument(
-        "--timeout", type=int, default=60,
-        help="阻塞网络调用超时秒（-1 表示无超时，默认 60）",
-    )
-    p.add_argument(
-        "--domino-version",
-        choices=["6.5.4", "7.0.2"],
-        default="7.0.2",
-        help="目标 Lotus Domino 版本（默认 7.0.2）",
-    )
-    p.add_argument(
-        "--target-acct-usr", metavar="USER",
-        help="目标邮箱账户用户名",
-    )
-    p.add_argument(
-        "--target-acct-pwd", metavar="PASS",
-        help="目标邮箱账户密码",
-    )
-    p.add_argument(
-        "--credential-type",
-        choices=["UnicodeCreds", "PasswordHash", "MachineHash"],
-        default="UnicodeCreds",
-        help="凭证类型（默认 UnicodeCreds）",
-    )
-    p.add_argument(
-        "--username", metavar="HEX",
-        help="用户名（十六进制字节，Unicode）",
-    )
-    p.add_argument(
-        "--credential", metavar="HEX",
-        help="凭证/密码哈希（十六进制字节，Unicode）",
-    )
-    p.add_argument(
-        "-v", "--verbose", action="store_true",
-        help="输出参数与调试信息",
-    )
+    p.add_argument("target_ip", help="目标 IP")
+    p.add_argument("-P", "--target-port", type=int, default=445,
+                   help="目标 SMB 端口 (默认 445)")
+    p.add_argument("--callback-ip", help="回调 IP")
+    p.add_argument("--callback-port", type=int, default=0,
+                   help="回调端口")
+    p.add_argument("--callback-local-port", type=int, default=0,
+                   help="本地回调端口")
+    p.add_argument("--groom", type=int, default=400,
+                   help="非分页池 groom 分配数 (默认 400)")
+    p.add_argument("--max-attempts", type=int, default=10,
+                   help="最大尝试次数 (默认 10)")
+    p.add_argument("--no-verify-target", action="store_true",
+                   help="禁用目标验证")
+    p.add_argument("--verify-backdoor", action="store_true",
+                   help="利用后验证后门")
+    p.add_argument("--network-timeout", type=float, default=30.0,
+                   help="网络超时")
+    p.add_argument("--xor-mask", type=int, default=0,
+                   help="EGG XOR mask")
     p.set_defaults(func=emphasis_mine_handle)
