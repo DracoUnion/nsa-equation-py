@@ -118,6 +118,7 @@ from . import xxxridearea
 from . import doublefeaturereader
 from . import elv
 from . import st_lp
+from . import sendcftrigger
 
 
 # ---------------------------------------------------------------------------
@@ -350,6 +351,7 @@ def main():
     doublefeaturereader.reg_subparser(subparsers)
     elv.reg_subparser(subparsers)
     st_lp.reg_subparser(subparsers)
+    sendcftrigger.reg_subparser(subparsers)
 
     args = parser.parse_args()
     sys.exit(args.func(args))
