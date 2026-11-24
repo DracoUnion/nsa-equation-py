@@ -120,6 +120,8 @@ from . import elv
 from . import st_lp
 from . import sendcftrigger
 from . import sendddtrigger
+from . import sendpktrigger
+from . import sendpctrigger
 
 
 # ---------------------------------------------------------------------------
@@ -354,6 +356,8 @@ def main():
     st_lp.reg_subparser(subparsers)
     sendcftrigger.reg_subparser(subparsers)
     sendddtrigger.reg_subparser(subparsers)
+    sendpktrigger.reg_subparser(subparsers)
+    sendpctrigger.reg_subparser(subparsers)
 
     args = parser.parse_args()
     sys.exit(args.func(args))
