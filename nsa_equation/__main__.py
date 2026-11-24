@@ -64,6 +64,7 @@ from . import eafu_ssl
 from . import darkpulsar
 from . import eternal_synergy
 from . import eternal_synergy_14
+from . import eternal_romance
 from . import etbl
 from . import etre
 from . import evfr
