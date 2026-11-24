@@ -100,6 +100,7 @@ from . import papercut
 from . import bpfcompiler
 from . import vlad
 from . import epwrapper
+from . import oddjob
 from . import clocksvc
 from . import greatdoccfg
 from . import gkdecoder
@@ -341,6 +342,7 @@ def main():
     bpfcompiler.reg_subparser(subparsers)
     vlad.reg_subparser(subparsers)
     epwrapper.reg_subparser(subparsers)
+    oddjob.reg_subparser(subparsers)
     clocksvc.reg_subparser(subparsers)
     greatdoccfg.reg_subparser(subparsers)
     gkdecoder.reg_subparser(subparsers)

