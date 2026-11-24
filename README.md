@@ -161,6 +161,17 @@ The optional 3rd argument (IP) is parsed but ignored.
 nsa-equation-py setourip in.bin out.bin
 ```
 
+### ds_parselogs — DSky 抓包文件分片
+
+Python port of `DS_ParseLogs.exe` (DSky/Tools 套件, C++/MSVCRT)。按标准 pcap 文件头
+(`D4C3 B2A1` / v2.4 / snaplen 0xFFFF / net 1) 把输入捕获文件切分为若干段，每段
+**原样**写出为 `<results_prefix>_%02d.pcap`。不做 XOR-0xE3 混淆也不做 AES 解密（那是
+`parsecapture` 的职责）；遇到非明文头部会报错并退出。
+
+```bash
+nsa-equation-py ds_parselogs capture.bin results_prefix   # -> results_prefix_01.pcap, ...
+```
+
 ### parsecapture — DSky 抓包文件解析 / 解密
 
 Python port of `Parsecapture.exe` (DSky/Tools 套件, ESKE-style C++/MSVCRT) —

@@ -110,6 +110,7 @@ from . import smbexp
 # ---- Legacy tools ports ----
 from . import setourip
 from . import parsecapture
+from . import ds_parselogs
 
 
 # ---------------------------------------------------------------------------
@@ -334,9 +335,10 @@ def main():
     # ---- Legacy tools ports ----
     setourip.reg_subparser(subparsers)
     parsecapture.reg_subparser(subparsers)
+    ds_parselogs.reg_subparser(subparsers)
 
     args = parser.parse_args()
-    args.func(args)
+    sys.exit(args.func(args))
 
 
 if __name__ == '__main__':
