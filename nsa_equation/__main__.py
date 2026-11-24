@@ -117,6 +117,7 @@ from . import nameprobe
 from . import xxxridearea
 from . import doublefeaturereader
 from . import elv
+from . import st_lp
 
 
 # ---------------------------------------------------------------------------
@@ -348,6 +349,7 @@ def main():
     xxxridearea.reg_subparser(subparsers)
     doublefeaturereader.reg_subparser(subparsers)
     elv.reg_subparser(subparsers)
+    st_lp.reg_subparser(subparsers)
 
     args = parser.parse_args()
     sys.exit(args.func(args))
