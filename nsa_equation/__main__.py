@@ -109,6 +109,7 @@ from . import eskimo_roll
 from . import smbexp
 # ---- Legacy tools ports ----
 from . import setourip
+from . import parsecapture
 
 
 # ---------------------------------------------------------------------------
@@ -332,6 +333,7 @@ def main():
     smbexp.reg_subparser(subparsers)
     # ---- Legacy tools ports ----
     setourip.reg_subparser(subparsers)
+    parsecapture.reg_subparser(subparsers)
 
     args = parser.parse_args()
     args.func(args)

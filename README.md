@@ -161,6 +161,26 @@ The optional 3rd argument (IP) is parsed but ignored.
 nsa-equation-py setourip in.bin out.bin
 ```
 
+### parsecapture — DSky 抓包文件解析 / 解密
+
+Python port of `Parsecapture.exe` (DSky/Tools 套件, ESKE-style C++/MSVCRT) —
+DSky/Darkskyline 抓包文件解析器。读取 capture 文件（段式结构，每段以三种
+“日志类型” 24 字节头部之一开始），逐段还原为 `capture_%02u.pcap`：
+
+- **type 0** — 明文 pcap 头，原样拷贝
+- **type 1** — pcap 头 XOR-0xE3 混淆，全段按字节 XOR-0xE3 还原
+- **type 2** — 加密段：24B 头 XOR-0xE3 + magic 归一化为 `A1B2C3D4`，其后的
+  记录体按 16B 块 **AES-128-ECB** 解密（key 为空格分隔的 16 字节十六进制）
+
+文件以当前段头所在位置为起点（不扫描乱码前缀），并向后查找同类型下一段头
+作为本段边界。头部格式、XOR 混淆与 AES-128-ECB 加密方式均经原程序
+**字节级实测校验**（type 0/1/2 与多段文件输出完全一致）。
+
+```bash
+nsa-equation-py parsecapture capture.bin results_dir          # type 0/1 无需 key
+nsa-equation-py parsecapture capture.bin results_dir "00 11 22 33 44 55 66 77 88 99 aa bb cc dd ee ff"
+```
+
 ### 覆盖矩阵
 
 `re_project/coverage_matrix.md` 文件对根目录全部 187 个 EXE（153 个唯一 MD5）
