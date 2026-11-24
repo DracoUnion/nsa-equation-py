@@ -113,6 +113,7 @@ from . import parsecapture
 from . import ds_parselogs
 from . import addresource
 from . import regprobe
+from . import nameprobe
 
 
 # ---------------------------------------------------------------------------
@@ -340,6 +341,7 @@ def main():
     ds_parselogs.reg_subparser(subparsers)
     addresource.reg_subparser(subparsers)
     regprobe.reg_subparser(subparsers)
+    nameprobe.reg_subparser(subparsers)
 
     args = parser.parse_args()
     sys.exit(args.func(args))
