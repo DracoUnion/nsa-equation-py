@@ -17,6 +17,9 @@ from . import eclipsedwingtouch
 from . import doublepulsar
 from . import pcdlllauncher
 from . import rpcproxy
+from . import rpcproxy
+from . import rpctouch
+from . import rpc2
 from . import rpctouch
 from . import danecfg
 from . import eternal_champion
@@ -115,6 +118,7 @@ from . import parsecapture
 from . import ds_parselogs
 from . import addresource
 from . import regprobe
+from . import nameprobe
 from . import nameprobe
 from . import xxxridearea
 from . import doublefeaturereader
@@ -357,6 +361,7 @@ def main():
     ds_parselogs.reg_subparser(subparsers)
     addresource.reg_subparser(subparsers)
     regprobe.reg_subparser(subparsers)
+    nameprobe.reg_subparser(subparsers)
     nameprobe.reg_subparser(subparsers)
     xxxridearea.reg_subparser(subparsers)
     doublefeaturereader.reg_subparser(subparsers)
