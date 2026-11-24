@@ -119,6 +119,7 @@ from . import doublefeaturereader
 from . import elv
 from . import st_lp
 from . import sendcftrigger
+from . import sendddtrigger
 
 
 # ---------------------------------------------------------------------------
@@ -352,6 +353,7 @@ def main():
     elv.reg_subparser(subparsers)
     st_lp.reg_subparser(subparsers)
     sendcftrigger.reg_subparser(subparsers)
+    sendddtrigger.reg_subparser(subparsers)
 
     args = parser.parse_args()
     sys.exit(args.func(args))
