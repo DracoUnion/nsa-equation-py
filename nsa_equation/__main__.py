@@ -111,6 +111,7 @@ from . import smbexp
 from . import setourip
 from . import parsecapture
 from . import ds_parselogs
+from . import addresource
 
 
 # ---------------------------------------------------------------------------
@@ -336,6 +337,7 @@ def main():
     setourip.reg_subparser(subparsers)
     parsecapture.reg_subparser(subparsers)
     ds_parselogs.reg_subparser(subparsers)
+    addresource.reg_subparser(subparsers)
 
     args = parser.parse_args()
     sys.exit(args.func(args))
